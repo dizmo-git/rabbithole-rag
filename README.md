@@ -1,1 +1,1 @@
-# rabbithole-rag
+Maybe I'll take this project as my bachelor's thesis. I'll see how far I get.
