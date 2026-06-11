@@ -15,7 +15,7 @@ CHROMA_PATH = "chroma"
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Test chunking
-    await chunk_data()
+    await test_chroma_similarity_search()
 
     yield
 
@@ -67,6 +67,22 @@ async def save_to_chroma(chunks: list[Document]):
     )
 
     print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
+
+async def test_chroma_similarity_search():
+    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=OllamaEmbeddings(model="nomic-embed-text"))
+
+    query = "How does Alice meet the Mad Hatter"
+    results = db.similarity_search_with_relevance_scores(query, k=3)
+
+    for i in range(len(results)):
+        print(f"Similarity for chunk {i}:\t{results[i][1]}")
+
+    #if len(results) == 0 or results[0][1] < 0.7:
+        #print("Unable to find matching results.")
+        #return
+    
+    context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
+    print(context_text)
 
 
 if __name__ == "__main__":
