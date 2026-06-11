@@ -1,9 +1,16 @@
+import os
+import shutil
 from fastapi import FastAPI
+from langchain_chroma import Chroma
 from contextlib import asynccontextmanager
+from langchain_ollama import OllamaEmbeddings
+from langchain_core.documents import Document
 from langchain_docling.loader import DoclingLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain_community.vectorstores.utils import filter_complex_metadata
 
 FILE_PATH = "../data/Alice's_Adventures_in_Wonderland.txt"
+CHROMA_PATH = "chroma"
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -41,9 +48,25 @@ async def chunk_data():
     chunks = text_splitter.split_documents(documents)
 
     print(f"Split {len(documents)} documents into {len(chunks)} chunks")
+
     document = chunks[10]
     print(document.page_content)
     print(document.metadata)
+
+    await save_to_chroma(chunks)
+
+
+async def save_to_chroma(chunks: list[Document]):
+    filtered_chunks = filter_complex_metadata(chunks)
+    
+    if os.path.exists(CHROMA_PATH):
+        shutil.rmtree(CHROMA_PATH)
+    
+    db = Chroma.from_documents(
+        filtered_chunks, embedding=OllamaEmbeddings(model="nomic-embed-text"), persist_directory=CHROMA_PATH
+    )
+
+    print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
 
 
 if __name__ == "__main__":

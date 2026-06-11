@@ -5,5 +5,7 @@ chromadb
 sentence-transformers
 langchain
 langchain-community
+langchain-chroma
+langchain-ollama
 langchain-docling
 ollama
