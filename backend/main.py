@@ -1,6 +1,9 @@
 import os
 import shutil
+from ollama import chat
+from ollama import ChatResponse
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from langchain_chroma import Chroma
 from contextlib import asynccontextmanager
 from langchain_ollama import OllamaEmbeddings
@@ -12,10 +15,15 @@ from langchain_community.vectorstores.utils import filter_complex_metadata
 FILE_PATH = "../data/Alice's_Adventures_in_Wonderland.txt"
 CHROMA_PATH = "chroma"
 
+origins = [
+    "http://localhost",
+    "http://localhost:5173"
+]
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Test chunking
-    await test_chroma_similarity_search()
+    await chunk_data()
 
     yield
 
@@ -24,6 +32,14 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Rabbithole RAG API", lifespan=lifespan)
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=origins,
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 @app.get("/")
 async def root():
     return {"message": "Rabbithole RAG API"}
@@ -31,6 +47,27 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.get("/ask")
+async def ask(question: str):
+    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=OllamaEmbeddings(model="nomic-embed-text"))
+
+    results = db.similarity_search_with_relevance_scores(question, k=3)
+
+    for i in range(len(results)):
+        print(f"Similarity for chunk {i}:\t{results[i][1]}")
+
+    context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
+
+    # hard coded for now
+    response: ChatResponse = chat(model="llama3.2:latest", messages=[
+        {
+            "role": "user",
+            "content": f"{question}\n\n\n{context_text}"
+        }
+    ])
+
+    return {"answer": response.message.content}
 
 async def get_docs():
     loader = DoclingLoader(file_path=FILE_PATH)
@@ -67,23 +104,6 @@ async def save_to_chroma(chunks: list[Document]):
     )
 
     print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
-
-async def test_chroma_similarity_search():
-    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=OllamaEmbeddings(model="nomic-embed-text"))
-
-    query = "How does Alice meet the Mad Hatter"
-    results = db.similarity_search_with_relevance_scores(query, k=3)
-
-    for i in range(len(results)):
-        print(f"Similarity for chunk {i}:\t{results[i][1]}")
-
-    #if len(results) == 0 or results[0][1] < 0.7:
-        #print("Unable to find matching results.")
-        #return
-    
-    context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
-    print(context_text)
-
 
 if __name__ == "__main__":
     import uvicorn
