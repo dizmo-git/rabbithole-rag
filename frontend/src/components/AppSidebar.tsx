@@ -9,12 +9,16 @@ import {
   SidebarMenuItem,
   SidebarMenuButton,
 } from "@/components/ui/sidebar";
+import { NotebookSwitcher } from "./NotebookSwitcher";
+
+const notebooks = ["Alice", "Reddit", "4Chan"];
 
 export function AppSidebar() {
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarHeader>
-        <p className="text-sm font-semibold p-2">Rabbithole RAG</p>
+        <NotebookSwitcher versions={notebooks} defaultVersion={notebooks[0]} />
+        <p className="text-sm font-semibold p-2">Sources</p>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
