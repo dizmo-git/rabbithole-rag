@@ -8,8 +8,10 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { NotebookSwitcher } from "./NotebookSwitcher";
+import { UploadSourceAlert } from "./UploadSourceAlert";
 
 const notebooks = ["Alice", "Reddit", "4Chan"];
 
@@ -35,6 +37,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter>
+        <UploadSourceAlert />
+      </SidebarFooter>
     </Sidebar>
   );
 }
