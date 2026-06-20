@@ -1,5 +1,6 @@
 import os
 import shutil
+import chromadb
 from ollama import chat
 from ollama import ChatResponse
 from fastapi import FastAPI
@@ -12,16 +13,26 @@ from langchain_docling.loader import DoclingLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores.utils import filter_complex_metadata
 
-FILE_PATH = "../data/Alice's_Adventures_in_Wonderland.txt"
+TEST_FILES = [
+    "../data/Alice's_Adventures_in_Wonderland.txt",
+    "../data/Nietzsche_The_Greek_State.txt",
+]
 CHROMA_PATH = "chroma"
+
+embeddings = OllamaEmbeddings(model="nomic-embed-text")
+model = "llama3.2:latest"
+
+persistence = chromadb.PersistentClient(CHROMA_PATH)
+vectore_store: Chroma | None = None
 
 origins = ["http://localhost", "http://localhost:5173"]
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Test chunking
-    await chunk_data()
+    notebook = "Nietzsche"  # Or Nietzsche
+    await open(notebook)
+    await chunk_data(1)  # 0 for Alice; 1 for Nietzsche
 
     yield
 
@@ -40,24 +51,19 @@ app.add_middleware(
 )
 
 
-@app.get("/")
-async def root():
-    return {"message": "Rabbithole RAG API"}
-
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
+@app.post("/notebook")
+async def open(name: str):
+    global vectore_store
+    vectore_store = await get_vector_store(name=name)
+    return {"result": "success"}
 
 
 @app.get("/ask")
 async def ask(question: str):
-    db = Chroma(
-        persist_directory=CHROMA_PATH,
-        embedding_function=OllamaEmbeddings(model="nomic-embed-text"),
-    )
+    if vectore_store is None:
+        raise RuntimeError("Vectorstore not initialized")
 
-    results = db.similarity_search_with_relevance_scores(question, k=3)
+    results = vectore_store.similarity_search_with_relevance_scores(question, k=3)
 
     for i in range(len(results)):
         print(f"Similarity for chunk {i}:\t{results[i][1]}")
@@ -66,24 +72,27 @@ async def ask(question: str):
 
     # hard coded for now
     response: ChatResponse = chat(
-        model="llama3.2:latest",
+        model=model,
         messages=[{"role": "user", "content": f"{question}\n\n\n{context_text}"}],
     )
 
     return {"answer": response.message.content}
 
 
-async def get_docs():
-    loader = DoclingLoader(file_path=FILE_PATH)
-    return loader.load()
+async def get_vector_store(name: str):
+    return Chroma(
+        client=persistence,
+        collection_name=f"notebook_{name}",
+        embedding_function=embeddings,
+    )
 
 
-async def chunk_data():
+async def chunk_data(file: int):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000, chunk_overlap=500, length_function=len, add_start_index=True
     )
 
-    documents = await get_docs()
+    documents = DoclingLoader(file_path=TEST_FILES[file]).load()
     chunks = text_splitter.split_documents(documents)
 
     print(f"Split {len(documents)} documents into {len(chunks)} chunks")
@@ -96,16 +105,13 @@ async def chunk_data():
 
 
 async def save_to_chroma(chunks: list[Document]):
+    if vectore_store is None:
+        raise RuntimeError("Vectorstore not initialized")
+
     filtered_chunks = filter_complex_metadata(chunks)
 
-    if os.path.exists(CHROMA_PATH):
-        shutil.rmtree(CHROMA_PATH)
-
-    db = Chroma.from_documents(
-        filtered_chunks,
-        embedding=OllamaEmbeddings(model="nomic-embed-text"),
-        persist_directory=CHROMA_PATH,
-    )
+    vectore_store.reset_collection()
+    vectore_store.add_documents(filtered_chunks)
 
     print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
 
