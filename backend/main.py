@@ -30,9 +30,10 @@ origins = ["http://localhost", "http://localhost:5173"]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    notebook = "Nietzsche"  # Or Nietzsche
+    print(await notebooks())
+    notebook = "Alice"  # Or Nietzsche
     await open(notebook)
-    await chunk_data(1)  # 0 for Alice; 1 for Nietzsche
+    await chunk_data(0)  # 0 for Alice; 1 for Nietzsche
 
     yield
 
@@ -51,11 +52,18 @@ app.add_middleware(
 )
 
 
-@app.post("/notebook")
+@app.post("/open")
 async def open(name: str):
     global vectore_store
     vectore_store = await get_vector_store(name=name)
     return {"result": "success"}
+
+
+@app.get("/notebooks")
+async def notebooks():
+    collections = persistence.list_collections()
+    names = [n.name for n in collections]
+    return {"names": names}
 
 
 @app.get("/ask")
@@ -82,7 +90,7 @@ async def ask(question: str):
 async def get_vector_store(name: str):
     return Chroma(
         client=persistence,
-        collection_name=f"notebook_{name}",
+        collection_name=name,
         embedding_function=embeddings,
     )
 

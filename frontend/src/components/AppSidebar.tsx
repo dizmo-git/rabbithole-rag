@@ -12,14 +12,28 @@ import {
 } from "@/components/ui/sidebar";
 import { NotebookSwitcher } from "./NotebookSwitcher";
 import { UploadSourceAlert } from "./UploadSourceAlert";
-
-const notebooks = ["Alice", "Reddit", "4Chan"];
+import { getNotebooks } from "@/api/notebooks";
+import { useEffect, useState } from "react";
 
 export function AppSidebar() {
+  const [notebookNames, setNotebookNames] = useState<string[]>([]);
+
+  useEffect(() => {
+    const fetchNotebooks = async () => {
+      const names = await getNotebooks();
+      setNotebookNames(names);
+    };
+
+    fetchNotebooks();
+  }, []);
+
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarHeader>
-        <NotebookSwitcher versions={notebooks} defaultVersion={notebooks[0]} />
+        <NotebookSwitcher
+          versions={notebookNames}
+          defaultVersion={notebookNames[0]}
+        />
         <p className="text-sm font-semibold p-2">Sources</p>
       </SidebarHeader>
       <SidebarContent>

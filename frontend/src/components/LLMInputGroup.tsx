@@ -1,12 +1,12 @@
 import TextareaAutosize from "react-textarea-autosize";
 import { useState } from "react";
-import api from "./api";
 
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
 } from "@/components/ui/input-group";
+import { ask } from "@/api/llm";
 
 export function LLMInputGroup() {
   const [text, setText] = useState("");
@@ -17,8 +17,8 @@ export function LLMInputGroup() {
       return;
     }
 
-    const response = await api.get("/ask/", { params: { question: input } });
-    alert(response.data.answer);
+    const answer = await ask(input);
+    alert(answer);
   }
 
   return (
