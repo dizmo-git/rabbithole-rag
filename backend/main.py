@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
+from db_seed import seed
 from routers import notebooks, query, sources
 
 origins = ["http://localhost", "http://localhost:5173"]
@@ -8,14 +9,14 @@ origins = ["http://localhost", "http://localhost:5173"]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print("Startup")
+    print("Rabbithole - Startup")
 
-    # Testing
-    # await chunk_data(0, "Alice")  # 0 for Alice; 1 for Nietzsche
+    # Seeding
+    await seed()
 
     yield
 
-    print("Cleanup")
+    print("Rabbithole - Cleanup")
 
 
 app = FastAPI(title="Rabbithole RAG API", lifespan=lifespan)

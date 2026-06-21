@@ -9,3 +9,4 @@ langchain-chroma
 langchain-ollama
 langchain-docling
 ollama
+sqlmodel
