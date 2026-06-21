@@ -7,9 +7,11 @@ import {
   InputGroupButton,
 } from "@/components/ui/input-group";
 import { ask } from "@/api/llm";
+import { useNotebook } from "./NotebookProvider";
 
 export function LLMInputGroup() {
   const [text, setText] = useState("");
+  const { selectedNotebook } = useNotebook();
 
   async function askAssistant(input: string) {
     if (!input) {
@@ -17,7 +19,7 @@ export function LLMInputGroup() {
       return;
     }
 
-    const answer = await ask(input);
+    const answer = await ask(input, selectedNotebook);
     alert(answer);
   }
 

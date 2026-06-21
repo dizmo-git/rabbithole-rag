@@ -14,10 +14,11 @@ import { NotebookSwitcher } from "./NotebookSwitcher";
 import { UploadSourceAlert } from "./UploadSourceAlert";
 import { getNotebooks, getSourcesByNotebook } from "@/api/notebooks";
 import { useEffect, useState } from "react";
+import { useNotebook } from "./NotebookProvider";
 
 export function AppSidebar() {
   const [notebookNames, setNotebookNames] = useState<string[]>([]);
-  const [selectedNotebook, setSelectedNotebook] = useState<string>("");
+  const { selectedNotebook, setSelectedNotebook } = useNotebook();
   const [sources, setSources] = useState<string[]>([]);
 
   useEffect(() => {
@@ -31,6 +32,7 @@ export function AppSidebar() {
   }, []);
 
   useEffect(() => {
+    if (!selectedNotebook) return;
     const fetchSources = async () => {
       const sources = await getSourcesByNotebook(selectedNotebook);
       setSources(sources);
