@@ -12,20 +12,32 @@ import {
 } from "@/components/ui/sidebar";
 import { NotebookSwitcher } from "./NotebookSwitcher";
 import { UploadSourceAlert } from "./UploadSourceAlert";
-import { getNotebooks } from "@/api/notebooks";
+import { getNotebooks, getSourcesByNotebook } from "@/api/notebooks";
 import { useEffect, useState } from "react";
 
 export function AppSidebar() {
   const [notebookNames, setNotebookNames] = useState<string[]>([]);
+  const [selectedNotebook, setSelectedNotebook] = useState<string>("");
+  const [sources, setSources] = useState<string[]>([]);
 
   useEffect(() => {
     const fetchNotebooks = async () => {
       const names = await getNotebooks();
       setNotebookNames(names);
+      setSelectedNotebook(names[0]);
     };
 
     fetchNotebooks();
   }, []);
+
+  useEffect(() => {
+    const fetchSources = async () => {
+      const sources = await getSourcesByNotebook(selectedNotebook);
+      setSources(sources);
+    };
+
+    fetchSources();
+  }, [selectedNotebook]);
 
   return (
     <Sidebar collapsible="offcanvas">
@@ -33,20 +45,19 @@ export function AppSidebar() {
         <NotebookSwitcher
           versions={notebookNames}
           defaultVersion={notebookNames[0]}
+          onSelect={setSelectedNotebook}
         />
-        <p className="text-sm font-semibold p-2">Sources</p>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Notebooks</SidebarGroupLabel>
+          <SidebarGroupLabel>Sources</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton>Notebook 1</SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton>Notebook 2</SidebarMenuButton>
-              </SidebarMenuItem>
+              {sources.map((source) => (
+                <SidebarMenuItem key={source}>
+                  <SidebarMenuButton title={source}>{source}</SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

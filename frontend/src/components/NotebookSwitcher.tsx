@@ -1,6 +1,4 @@
-"use client";
-
-import * as React from "react";
+import { useState } from "react";
 import { Check, ChevronsUpDown, GalleryVerticalEnd } from "lucide-react";
 
 import {
@@ -18,11 +16,13 @@ import {
 export function NotebookSwitcher({
   versions,
   defaultVersion,
+  onSelect,
 }: {
   versions: string[];
   defaultVersion: string;
+  onSelect: (notebook: string) => void;
 }) {
-  const [selectedVersion, setSelectedVersion] = React.useState(defaultVersion);
+  const [selectedVersion, setSelectedVersion] = useState(defaultVersion);
 
   return (
     <SidebarMenu>
@@ -50,7 +50,10 @@ export function NotebookSwitcher({
             {versions.map((version) => (
               <DropdownMenuItem
                 key={version}
-                onSelect={() => setSelectedVersion(version)}
+                onSelect={() => {
+                  setSelectedVersion(version);
+                  onSelect(version);
+                }}
               >
                 {version}{" "}
                 {version === selectedVersion && <Check className="ml-auto" />}

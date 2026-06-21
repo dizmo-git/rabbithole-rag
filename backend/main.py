@@ -1,6 +1,7 @@
 import os
 import shutil
 import chromadb
+from pathlib import Path
 from ollama import chat
 from ollama import ChatResponse
 from fastapi import FastAPI
@@ -30,10 +31,10 @@ origins = ["http://localhost", "http://localhost:5173"]
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    print(await notebooks())
-    notebook = "Alice"  # Or Nietzsche
-    await open(notebook)
-    await chunk_data(0)  # 0 for Alice; 1 for Nietzsche
+    await sources("Alice")
+
+    # await open("Alice")
+    # await chunk_data(0)  # 0 for Alice; 1 for Nietzsche
 
     yield
 
@@ -64,6 +65,14 @@ async def notebooks():
     collections = persistence.list_collections()
     names = [n.name for n in collections]
     return {"names": names}
+
+
+@app.get("/sources")
+async def sources(notebook: str):
+    collection = await get_vector_store(notebook)
+    metadatas = collection.get(include=["metadatas"])["metadatas"]
+    unique_sources = {Path(meta["source"]).name for meta in metadatas}
+    return {"sources": unique_sources}
 
 
 @app.get("/ask")
