@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Check, ChevronsUpDown, GalleryVerticalEnd } from "lucide-react";
 
 import {
@@ -23,6 +23,11 @@ export function NotebookSwitcher({
   onSelect: (notebook: string) => void;
 }) {
   const [selectedVersion, setSelectedVersion] = useState(defaultVersion);
+  useEffect(() => {
+    if (defaultVersion) {
+      setSelectedVersion(defaultVersion);
+    }
+  }, [defaultVersion]);
 
   return (
     <SidebarMenu>

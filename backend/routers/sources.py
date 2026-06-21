@@ -12,13 +12,16 @@ router = APIRouter(prefix="/sources")
 NOTEBOOKS_PATH = Path(__file__).parent.parent.parent / "data" / "notebooks"
 
 
-# TODO: Query from sqlite
 @router.get("/")
-async def sources(notebook: str):
-    collection = await get_vector_store(notebook)
-    metadatas = collection.get(include=["metadatas"])["metadatas"]
-    unique_sources = {Path(meta["source"]).name for meta in metadatas}
-    return {"sources": unique_sources}
+async def sources(notebook: str, session: Session = Depends(get_session)):
+    notebook_id = session.exec(
+        select(Notebook.id).where(Notebook.name == notebook)
+    ).first()
+    sources = session.exec(
+        select(Source.filename).where(Source.notebook_id == notebook_id)
+    ).all()
+
+    return {"sources": sources}
 
 
 @router.post("/add")
