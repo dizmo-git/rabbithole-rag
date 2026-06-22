@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "rabbithole-rag"
+version = "1.0.0"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "python-dotenv",
+    "chromadb",
+    "sentence-transformers",
+    "langchain",
+    "langchain-community",
+    "langchain-chroma",
+    "langchain-ollama",
+    "langchain-docling",
+    "ollama",
+    "sqlmodel",
+]
+requires-python = ">=3.13"
+authors = [
+    { name = "Dmytro Zozulia", email = "dzozulya3377@gmail.com" },
+]
+maintainers = [
+    { name = "Dmytro Zozulia", email = "dzozulya3377@gmail.com" },
+]
+description = "Local RAG system"
+readme = "README.md"
+license = "AGPL-3.0"
+keywords = ["RAG", "retrieval-augmented generation", "local RAG",]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["backend*"]
+
+[project.urls]
+Repository = "https://github.com/dizmo-git/rabbithole-rag"

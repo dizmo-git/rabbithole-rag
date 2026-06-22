@@ -5,6 +5,7 @@ from db_seed import seed
 from routers import notebooks, query, sources
 
 origins = ["http://localhost", "http://localhost:5173"]
+seed = False
 
 
 @asynccontextmanager
@@ -12,7 +13,8 @@ async def lifespan(app: FastAPI):
     print("Rabbithole - Startup")
 
     # Seeding
-    await seed()
+    if seed:
+        await seed()
 
     yield
 
