@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from chroma import get_vector_store
-from chroma import model
+from backend.chroma import get_vector_store
+from backend.chroma import model
 from ollama import ChatResponse
 from ollama import chat
 

@@ -1,5 +1,5 @@
 from sqlmodel import SQLModel, create_engine, Session
-import models  # noqa
+import backend.models  # noqa
 
 engine = create_engine("sqlite:///app.db", echo=False)
 

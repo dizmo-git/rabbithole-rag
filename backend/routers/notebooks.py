@@ -1,12 +1,12 @@
-from pathlib import Path
 import shutil
 
+from pathlib import Path
 from fastapi import APIRouter, Depends
-from .sources import NOTEBOOKS_PATH
+from backend.routers.sources import NOTEBOOKS_PATH
+from backend.database import get_session, engine
+from backend.models import Notebook
 from chroma import client
-from database import get_session, engine
 from sqlmodel import SQLModel, Session, select
-from models import Notebook
 
 router = APIRouter(prefix="/notebooks")
 

@@ -1,6 +1,6 @@
-from database import get_session
-from routers.notebooks import *
-from routers.sources import *
+from backend.database import get_session
+from backend.routers.notebooks import *
+from backend.routers.sources import *
 
 
 async def seed():

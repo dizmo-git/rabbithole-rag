@@ -1,11 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
-from db_seed import seed
-from routers import notebooks, query, sources
+from backend.db_seed import seed
+from backend.routers import notebooks, query, sources
 
 origins = ["http://localhost", "http://localhost:5173"]
-seed = False
+doSeed = False
 
 
 @asynccontextmanager
@@ -13,7 +13,7 @@ async def lifespan(app: FastAPI):
     print("Rabbithole - Startup")
 
     # Seeding
-    if seed:
+    if doSeed:
         await seed()
 
     yield

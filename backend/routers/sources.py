@@ -2,9 +2,9 @@ import os
 import shutil
 
 from fastapi import APIRouter, Depends, HTTPException
-from database import get_session
-from models import Notebook, Source
-from chroma import chunk_and_save, get_vector_store
+from backend.database import get_session
+from backend.models import Notebook, Source
+from backend.chroma import chunk_and_save
 from pathlib import Path
 from sqlmodel import Session, select
 
