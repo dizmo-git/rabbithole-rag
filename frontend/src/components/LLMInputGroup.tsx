@@ -24,27 +24,29 @@ export function LLMInputGroup() {
   }
 
   return (
-    <div className="grid w-1/2 max-w-sm gap-6">
-      <InputGroup>
-        <TextareaAutosize
-          data-slot="input-group-control"
-          className="flex field-sizing-content min-h-16 w-full resize-none rounded-md bg-transparent px-3 py-2.5 text-base transition-[color,box-shadow] outline-none md:text-sm"
-          placeholder="Ask anything..."
-          onChange={(e) => setText(e.target.value)}
-        />
-        <InputGroupAddon align="block-end">
-          <InputGroupButton
-            onClick={async () => {
-              await askAssistant(text);
-            }}
-            className="ml-auto"
-            size="sm"
-            variant="default"
-          >
-            Submit
-          </InputGroupButton>
-        </InputGroupAddon>
-      </InputGroup>
+    <div className="absolute bottom-0 left-0 right-0 flex justify-center px-4 pb-4">
+      <div className="w-full max-w-2xl">
+        <InputGroup>
+          <TextareaAutosize
+            data-slot="input-group-control"
+            className="flex field-sizing-content min-h-16 w-full resize-none rounded-md bg-transparent px-3 py-2.5 text-base transition-[color,box-shadow] outline-none md:text-sm"
+            placeholder="Ask anything..."
+            onChange={(e) => setText(e.target.value)}
+          />
+          <InputGroupAddon align="block-end">
+            <InputGroupButton
+              onClick={async () => {
+                await askAssistant(text);
+              }}
+              className="ml-auto"
+              size="sm"
+              variant="default"
+            >
+              Submit
+            </InputGroupButton>
+          </InputGroupAddon>
+        </InputGroup>
+      </div>
     </div>
   );
 }
