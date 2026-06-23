@@ -11,3 +11,10 @@ export const getSourcesByNotebook = async (name: string): Promise<string[]> => {
   });
   return res.data.sources;
 };
+
+export const addSourceToNotebook = async (name: string): Promise<string> => {
+  const res = await api.post<string>("/sources/add/", null, {
+    params: { notebook_name: name },
+  });
+  return res.data;
+};

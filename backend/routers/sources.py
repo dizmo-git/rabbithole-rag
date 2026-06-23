@@ -1,6 +1,8 @@
 import os
 import shutil
+import tkinter as tk
 
+from tkinter import filedialog
 from fastapi import APIRouter, Depends, HTTPException
 from backend.database import get_session
 from backend.models import Notebook, Source
@@ -10,6 +12,10 @@ from sqlmodel import Session, select
 
 router = APIRouter(prefix="/sources")
 NOTEBOOKS_PATH = Path(__file__).parent.parent.parent / "data" / "notebooks"
+ALLOWED_FILETYPES = [
+    ("Documents", "*.pdf *.txt *.md"),
+    ("All files", "*.*"),
+]
 
 
 @router.get("/")
@@ -24,7 +30,15 @@ async def sources(notebook: str, session: Session = Depends(get_session)):
     return {"sources": sources}
 
 
-@router.post("/add")
+@router.post("/add/")
+async def from_explorer(notebook_name: str, session: Session = Depends(get_session)):
+    path = get_source_from_explorer()
+    if path is None:
+        raise HTTPException(status_code=204, detail="No file selected")
+
+    return await add(notebook_name=notebook_name, path=path, session=session)
+
+
 async def add(notebook_name: str, path: str, session: Session = Depends(get_session)):
     notebook = session.exec(
         select(Notebook).where(Notebook.name == notebook_name)
@@ -52,3 +66,12 @@ async def add(notebook_name: str, path: str, session: Session = Depends(get_sess
     await chunk_and_save(path, notebook.name)
     print(f"Added new source {dst} to {notebook_name}")
     return path
+
+
+def get_source_from_explorer() -> str | None:
+    root = tk.Tk()
+    root.withdraw()
+    root.wm_attributes("-topmost", True)
+    path = filedialog.askopenfilename(filetypes=ALLOWED_FILETYPES)
+    root.destroy()
+    return path or None

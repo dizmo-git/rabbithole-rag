@@ -8,6 +8,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores.utils import filter_complex_metadata
 
 CHROMA_PATH = "chroma"
+BATCH_SIZE = 50
 
 embeddings = OllamaEmbeddings(model="nomic-embed-text")
 model = "llama3.2:latest"
@@ -30,7 +31,10 @@ async def get_vector_store(name: str):
 
 async def chunk_and_save(file: str, collection: str):
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=1000, chunk_overlap=500, length_function=len, add_start_index=True
+        chunk_size=300,
+        chunk_overlap=50,
+        length_function=len,
+        add_start_index=True,
     )
 
     documents = DoclingLoader(file_path=file).load()
@@ -49,7 +53,9 @@ async def save_to_chroma(chunks: list[Document], collection: str):
     vector_store = await get_vector_store(collection)
     filtered_chunks = filter_complex_metadata(chunks)
 
-    vector_store.reset_collection()
-    vector_store.add_documents(filtered_chunks)
+    for i in range(0, len(filtered_chunks), BATCH_SIZE):
+        batch = filtered_chunks[i : i + BATCH_SIZE]
+        vector_store.add_documents(batch)
+        print(f"Saved {len(batch)} chunks to {CHROMA_PATH}.")
 
-    print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}.")
+    print(f"Saved total of {len(chunks)} chunks to {CHROMA_PATH}.")

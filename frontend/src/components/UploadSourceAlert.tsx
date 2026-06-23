@@ -9,15 +9,12 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { UploadSourceButton } from "@/components/UploadSourceButton";
 
 export function UploadSourceAlert() {
   return (
     <AlertDialog>
       <AlertDialogTrigger asChild>
-        <span>
-          <UploadSourceButton />
-        </span>
+        <span>{/* <UploadSourceButton /> */}</span>
       </AlertDialogTrigger>
       <AlertDialogContent>
         <AlertDialogHeader>

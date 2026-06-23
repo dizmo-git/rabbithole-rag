@@ -11,15 +11,30 @@ import {
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { NotebookSwitcher } from "./NotebookSwitcher";
-import { UploadSourceAlert } from "./UploadSourceAlert";
-import { getNotebooks, getSourcesByNotebook } from "@/api/notebooks";
+import {
+  addSourceToNotebook,
+  getNotebooks,
+  getSourcesByNotebook,
+} from "@/api/notebooks";
 import { useEffect, useState } from "react";
 import { useNotebook } from "./NotebookProvider";
+import { UploadSourceButton } from "./UploadSourceButton";
 
 export function AppSidebar() {
   const [notebookNames, setNotebookNames] = useState<string[]>([]);
   const { selectedNotebook, setSelectedNotebook } = useNotebook();
   const [sources, setSources] = useState<string[]>([]);
+
+  const fetchSources = async () => {
+    const sources = await getSourcesByNotebook(selectedNotebook);
+    setSources(sources);
+  };
+
+  const handleUploadSource = async () => {
+    if (!selectedNotebook) return;
+    await addSourceToNotebook(selectedNotebook);
+    await fetchSources();
+  };
 
   useEffect(() => {
     const fetchNotebooks = async () => {
@@ -33,11 +48,6 @@ export function AppSidebar() {
 
   useEffect(() => {
     if (!selectedNotebook) return;
-    const fetchSources = async () => {
-      const sources = await getSourcesByNotebook(selectedNotebook);
-      setSources(sources);
-    };
-
     fetchSources();
   }, [selectedNotebook]);
 
@@ -65,7 +75,8 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <UploadSourceAlert />
+        <UploadSourceButton onClick={handleUploadSource} />
+        {/* <UploadSourceAlert /> */}
       </SidebarFooter>
     </Sidebar>
   );
