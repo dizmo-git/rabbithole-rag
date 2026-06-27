@@ -1,11 +1,6 @@
-export const MessageRole = {
-  User: "user",
-  Assistant: "assistant",
-} as const;
+import { MessageRole, type MessageRoleType } from "@/types";
 
-export type MessageRoleType = (typeof MessageRole)[keyof typeof MessageRole];
-
-interface MessageBubbleProps {
+export interface MessageBubbleProps {
   input: string;
   role: MessageRoleType;
 }

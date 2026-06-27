@@ -8,8 +8,14 @@ import {
 } from "@/components/ui/input-group";
 import { ask } from "@/api/llm";
 import { useNotebook } from "./NotebookProvider";
+import { MessageRole, type Message } from "@/types";
 
-export function LLMInputGroup() {
+type LLMInputGroupProps = {
+  messages: Message[];
+  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+};
+
+export function LLMInputGroup({ messages, setMessages }: LLMInputGroupProps) {
   const [text, setText] = useState("");
   const { selectedNotebook } = useNotebook();
 
@@ -19,12 +25,17 @@ export function LLMInputGroup() {
       return;
     }
 
-    const answer = await ask(input, selectedNotebook);
-    alert(answer);
+    const newMessage: Message = { text: input, role: MessageRole.User };
+    setMessages((prev) => [...prev, newMessage]);
+    const answer: Message = {
+      text: await ask(input, selectedNotebook),
+      role: MessageRole.Assistant,
+    };
+    setMessages((prev) => [...prev, answer]);
   }
 
   return (
-    <div className="absolute bottom-0 left-0 right-0 flex justify-center px-4 pb-4">
+    <div className="flex justify-center px-4 pb-4">
       <div className="w-full max-w-2xl">
         <InputGroup>
           <TextareaAutosize

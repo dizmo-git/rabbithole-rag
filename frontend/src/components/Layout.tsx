@@ -10,9 +10,9 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <SidebarProvider>
       <AppSidebar />
       <SidebarInset>
-        <main>
+        <main className="flex flex-col h-screen">
           <SidebarTrigger />
-          {children}
+          <div className="flex flex-col flex-1 min-h-0">{children}</div>
         </main>
       </SidebarInset>
     </SidebarProvider>

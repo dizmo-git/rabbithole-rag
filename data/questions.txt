@@ -1,0 +1,26 @@
+This file is not used anywhere in the code. Theese are just question to test the RAG:
+
+Alice in Wonderland
+
+Who is the Queen of Hearts?
+What does the Cheshire Cat say about madness?
+Why does Alice follow the White Rabbit?
+
+The Greek State
+
+What does Nietzsche say about slavery and culture?
+How does Nietzsche relate the Greek state to the will to power?
+What is the role of war in Nietzsche's Greek State?
+
+Also Sprach Zarathustra
+
+What is the Übermensch?
+What does Zarathustra say about God being dead?
+What is eternal recurrence?
+
+Nietzsche Biography
+
+Where was Nietzsche born?
+What was his relationship with Wagner?
+When did Nietzsche have his mental breakdown and what caused it?
+
