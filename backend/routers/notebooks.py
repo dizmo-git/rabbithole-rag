@@ -36,6 +36,7 @@ async def nuke():
     path = Path(NOTEBOOKS_PATH).absolute()
     shutil.rmtree(path)
     path.mkdir()
+    (path / ".gitkeep").touch()
     print("All notebook files are deleted")
 
     client.reset()
