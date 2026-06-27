@@ -45,9 +45,11 @@ Thumbs.db
 desktop.ini
 
 # Vector DB / Data
-chroma_db/
+backend/chroma/*
+!backend/chroma/.gitkeep
 *.db
 *.sqlite
+*.sqlite3
 data/raw/
 data/processed/
 
@@ -55,3 +57,7 @@ data/processed/
 *.bin
 *.gguf
 *.safetensors
+
+# Notebooks
+data/notebooks/*
+!data/notebooks/.gitkeep

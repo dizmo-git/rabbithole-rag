@@ -23,6 +23,7 @@ export function NotebookSwitcher({
   onSelect: (notebook: string) => void;
 }) {
   const [selectedVersion, setSelectedVersion] = useState(defaultVersion);
+
   useEffect(() => {
     if (defaultVersion) {
       setSelectedVersion(defaultVersion);

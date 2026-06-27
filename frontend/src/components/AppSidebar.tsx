@@ -19,6 +19,7 @@ import {
 import { useEffect, useState } from "react";
 import { useNotebook } from "./NotebookProvider";
 import { UploadSourceButton } from "./UploadSourceButton";
+import { NewNotebookAlert } from "./NewNotebookAlert";
 
 export function AppSidebar() {
   const [notebookNames, setNotebookNames] = useState<string[]>([]);
@@ -30,6 +31,12 @@ export function AppSidebar() {
     setSources(sources);
   };
 
+  const fetchNotebooks = async () => {
+    const names = await getNotebooks();
+    setNotebookNames(names);
+    return names;
+  };
+
   const handleUploadSource = async () => {
     if (!selectedNotebook) return;
     await addSourceToNotebook(selectedNotebook);
@@ -37,13 +44,12 @@ export function AppSidebar() {
   };
 
   useEffect(() => {
-    const fetchNotebooks = async () => {
-      const names = await getNotebooks();
-      setNotebookNames(names);
+    const fetch = async () => {
+      const names = await fetchNotebooks();
       setSelectedNotebook(names[0]);
     };
 
-    fetchNotebooks();
+    fetch();
   }, []);
 
   useEffect(() => {
@@ -54,9 +60,10 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="offcanvas">
       <SidebarHeader>
+        <NewNotebookAlert onCreated={fetchNotebooks} />
         <NotebookSwitcher
           versions={notebookNames}
-          defaultVersion={notebookNames[0]}
+          defaultVersion={selectedNotebook}
           onSelect={setSelectedNotebook}
         />
       </SidebarHeader>

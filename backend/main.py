@@ -5,7 +5,7 @@ from backend.db_seed import seed
 from backend.routers import notebooks, query, sources
 
 origins = ["http://localhost", "http://localhost:5173"]
-doSeed = False
+doSeed = True
 
 
 @asynccontextmanager

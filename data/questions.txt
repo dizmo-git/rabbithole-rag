@@ -1,4 +1,4 @@
-This file is not used anywhere in the code. Theese are just question to test the RAG:
+This file is not used anywhere in the code. These are just question to test the RAG:
 
 Alice in Wonderland
 
