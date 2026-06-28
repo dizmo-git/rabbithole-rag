@@ -1,4 +1,5 @@
 import chromadb
+import asyncio
 from chromadb.config import Settings
 from langchain_chroma import Chroma
 from langchain_ollama import OllamaEmbeddings
@@ -6,6 +7,10 @@ from langchain_core.documents import Document
 from langchain_docling.loader import DoclingLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores.utils import filter_complex_metadata
+from sqlmodel import Session
+
+from backend import database
+from backend.models import Source
 
 CHROMA_PATH = "chroma"
 BATCH_SIZE = 50
@@ -26,36 +31,34 @@ async def get_vector_store(name: str):
     )
 
 
-# Only used for testing inside a main.py
-
-
-async def chunk_and_save(file: str, collection: str):
+async def chunk_and_save(file: str, collection: str, source_id: str):
+    loop = asyncio.get_event_loop()
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=300,
-        chunk_overlap=50,
-        length_function=len,
-        add_start_index=True,
+        chunk_size=300, chunk_overlap=50, length_function=len, add_start_index=True
     )
 
-    documents = DoclingLoader(file_path=file).load()
+    documents = await loop.run_in_executor(
+        None, lambda: DoclingLoader(file_path=file).load()
+    )
     chunks = text_splitter.split_documents(documents)
-
-    print(f"Split {len(documents)} documents into {len(chunks)} chunks")
-
-    document = chunks[10]
-    print(document.page_content)
-    print(document.metadata)
 
     await save_to_chroma(chunks, collection)
 
+    with Session(database.engine) as session:
+        source = session.get(Source, source_id)
+        if source is None:
+            raise RuntimeError("Source not found")
+        source.status = "processed"
+        session.add(source)
+        session.commit()
+
 
 async def save_to_chroma(chunks: list[Document], collection: str):
+    loop = asyncio.get_event_loop()
     vector_store = await get_vector_store(collection)
     filtered_chunks = filter_complex_metadata(chunks)
 
     for i in range(0, len(filtered_chunks), BATCH_SIZE):
         batch = filtered_chunks[i : i + BATCH_SIZE]
-        vector_store.add_documents(batch)
+        await loop.run_in_executor(None, lambda b=batch: vector_store.add_documents(b))
         print(f"Saved {len(batch)} chunks to {CHROMA_PATH}.")
-
-    print(f"Saved total of {len(chunks)} chunks to {CHROMA_PATH}.")

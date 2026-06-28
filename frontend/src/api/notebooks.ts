@@ -1,4 +1,4 @@
-import type { Notebook } from "@/types";
+import type { Notebook, Source } from "@/types";
 import api from "./client";
 
 export const getNotebooks = async (): Promise<string[]> => {
@@ -6,15 +6,15 @@ export const getNotebooks = async (): Promise<string[]> => {
   return res.data.names;
 };
 
-export const getSourcesByNotebook = async (name: string): Promise<string[]> => {
-  const res = await api.get<{ sources: string[] }>("/sources/", {
+export const getSourcesByNotebook = async (name: string): Promise<Source[]> => {
+  const res = await api.get<Source[]>("/sources/", {
     params: { notebook: name },
   });
-  return res.data.sources;
+  return res.data;
 };
 
-export const addSourceToNotebook = async (name: string): Promise<string> => {
-  const res = await api.post<string>("/sources/add/", null, {
+export const addSourceToNotebook = async (name: string): Promise<Source> => {
+  const res = await api.post<Source>("/sources/add/", null, {
     params: { notebook_name: name },
   });
   return res.data;

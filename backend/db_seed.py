@@ -8,14 +8,14 @@ async def seed():
     await nuke()
 
     await new(name="Alice", session=session)
-    await add(
+    await ingest_source_sync(
         notebook_name="Alice",
         path="../data/seed/Alice's_Adventures_in_Wonderland.txt",
         session=session,
     )
 
     await new(name="Nietzshe", session=session)
-    await add(
+    await ingest_source_sync(
         notebook_name="Nietzshe",
         path="../data/seed/Nietzsche_The_Greek_State.txt",
         session=session,

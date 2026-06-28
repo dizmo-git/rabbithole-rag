@@ -16,19 +16,23 @@ import {
   getNotebooks,
   getSourcesByNotebook,
 } from "@/api/notebooks";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useNotebook } from "./NotebookProvider";
 import { UploadSourceButton } from "./UploadSourceButton";
 import { NewNotebookAlert } from "./NewNotebookAlert";
+import type { Source } from "@/types";
+import { Spinner } from "./ui/spinner";
 
 export function AppSidebar() {
+  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [notebookNames, setNotebookNames] = useState<string[]>([]);
   const { selectedNotebook, setSelectedNotebook } = useNotebook();
-  const [sources, setSources] = useState<string[]>([]);
+  const [sources, setSources] = useState<Source[]>([]);
 
   const fetchSources = async () => {
     const sources = await getSourcesByNotebook(selectedNotebook);
     setSources(sources);
+    return sources;
   };
 
   const fetchNotebooks = async () => {
@@ -39,8 +43,9 @@ export function AppSidebar() {
 
   const handleUploadSource = async () => {
     if (!selectedNotebook) return;
-    await addSourceToNotebook(selectedNotebook);
-    await fetchSources();
+    const newSource = await addSourceToNotebook(selectedNotebook);
+    setSources((prev) => [...prev, newSource]);
+    startPolling();
   };
 
   useEffect(() => {
@@ -56,6 +61,23 @@ export function AppSidebar() {
     if (!selectedNotebook) return;
     fetchSources();
   }, [selectedNotebook]);
+
+  const stopPolling = () => {
+    if (pollingRef.current) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  };
+
+  const startPolling = () => {
+    stopPolling();
+    pollingRef.current = setInterval(async () => {
+      const sources = await fetchSources();
+      if (!sources.some((s) => s.status === "pending")) {
+        stopPolling();
+      }
+    }, 2500);
+  };
 
   return (
     <Sidebar collapsible="offcanvas">
@@ -73,8 +95,11 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {sources.map((source) => (
-                <SidebarMenuItem key={source}>
-                  <SidebarMenuButton title={source}>{source}</SidebarMenuButton>
+                <SidebarMenuItem key={source.id}>
+                  <SidebarMenuButton title={source.filename}>
+                    {source.status === "pending" && <Spinner />}
+                    {source.filename}
+                  </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
             </SidebarMenu>

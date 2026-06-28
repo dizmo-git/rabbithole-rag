@@ -3,7 +3,7 @@ import shutil
 import tkinter as tk
 
 from tkinter import filedialog
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
 from backend.database import get_session
 from backend.models import Notebook, Source
 from backend.chroma import chunk_and_save
@@ -24,22 +24,36 @@ async def sources(notebook: str, session: Session = Depends(get_session)):
         select(Notebook.id).where(Notebook.name == notebook)
     ).first()
     sources = session.exec(
-        select(Source.filename).where(Source.notebook_id == notebook_id)
+        select(Source).where(Source.notebook_id == notebook_id)
     ).all()
 
-    return {"sources": sources}
+    return sources
 
 
 @router.post("/add/")
-async def from_explorer(notebook_name: str, session: Session = Depends(get_session)):
+async def upload_source(
+    notebook_name: str,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+):
     path = get_source_from_explorer()
     if path is None:
         raise HTTPException(status_code=204, detail="No file selected")
 
-    return await add(notebook_name=notebook_name, path=path, session=session)
+    return await ingest_source(
+        notebook_name=notebook_name,
+        path=path,
+        background_tasks=background_tasks,
+        session=session,
+    )
 
 
-async def add(notebook_name: str, path: str, session: Session = Depends(get_session)):
+async def ingest_source(
+    notebook_name: str,
+    path: str,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+):
     notebook = session.exec(
         select(Notebook).where(Notebook.name == notebook_name)
     ).first()
@@ -63,8 +77,41 @@ async def add(notebook_name: str, path: str, session: Session = Depends(get_sess
     session.commit()
     session.refresh(source)
 
-    await chunk_and_save(path, notebook.name)
-    print(f"Added new source {dst} to {notebook_name}")
+    background_tasks.add_task(chunk_and_save, path, notebook.name, source.id)
+    print(f"Added new pending source {dst} to {notebook_name}")
+    return source
+
+
+async def ingest_source_sync(
+    notebook_name: str,
+    path: str,
+    session: Session = Depends(get_session),
+):
+    notebook = session.exec(
+        select(Notebook).where(Notebook.name == notebook_name)
+    ).first()
+
+    if notebook is None:
+        raise HTTPException(status_code=404, detail="Notebook does not exist")
+
+    src = Path(path).absolute()
+    dst = Path(
+        os.path.join(Path(NOTEBOOKS_PATH).absolute(), f"{notebook.id}/{src.name}")
+    )
+
+    if not src.exists():
+        raise HTTPException(status_code=404, detail="File does not exist")
+
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(src=src, dst=dst)
+
+    source = Source(notebook_id=notebook.id, file_path=str(dst), filename=dst.name)
+    session.add(source)
+    session.commit()
+    session.refresh(source)
+
+    await chunk_and_save(path, notebook.name, source.id)
+    print(f"Added new pending source {dst} to {notebook_name}")
     return path
 
 
