@@ -6,17 +6,22 @@ import MessageBubble from "./components/MessageBubble";
 import { useState } from "react";
 import { type Message } from "./types";
 import Separator from "./components/Separator";
+import { ChatSettingsDropdown } from "./components/ChatSettingsDropdown";
 
 export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
 
   return (
     <NotebookProvider>
-      <Layout>
+      <Layout
+        headerActions={<ChatSettingsDropdown onClear={() => setMessages([])} />}
+      >
         <ScrollArea className="flex-1 min-h-0 pb-4">
-          {messages?.map((m) => (
-            <MessageBubble input={m.text} role={m.role} />
-          ))}
+          <div className="flex flex-col">
+            {messages?.map((m) => (
+              <MessageBubble input={m.text} role={m.role} />
+            ))}
+          </div>
         </ScrollArea>
         <Separator />
         <LLMInputGroup messages={messages} setMessages={setMessages} />
