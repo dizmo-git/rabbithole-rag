@@ -25,10 +25,12 @@ export function LLMInputGroup({ messages, setMessages }: LLMInputGroupProps) {
       return;
     }
 
-    const newMessage: Message = { text: input, role: MessageRole.User };
-    setMessages((prev) => [...prev, newMessage]);
+    const newMessage: Message = { content: input, role: MessageRole.User };
+    const updatedMessages = [...messages, newMessage];
+
+    setMessages(updatedMessages);
     const answer: Message = {
-      text: await ask(input, selectedNotebook),
+      content: await ask(updatedMessages, selectedNotebook),
       role: MessageRole.Assistant,
     };
     setMessages((prev) => [...prev, answer]);

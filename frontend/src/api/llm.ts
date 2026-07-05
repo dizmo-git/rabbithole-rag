@@ -1,8 +1,12 @@
+import type { Message } from "@/types";
 import api from "./client";
 
-export const ask = async (input: string, notebook: string): Promise<string> => {
-  const res = await api.get<{ answer: string }>("/query/", {
-    params: { question: input, notebook: notebook },
+export const ask = async (
+  messages: Message[],
+  notebook: string,
+): Promise<string> => {
+  const res = await api.post<{ answer: string }>("/query/", messages, {
+    params: { notebook: notebook },
   });
   return res.data.answer;
 };

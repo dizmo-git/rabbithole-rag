@@ -11,7 +11,7 @@ import { LuEllipsisVertical } from "react-icons/lu";
 export function ChatSettingsDropdown({ onClear }: { onClear: () => void }) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger>
+      <DropdownMenuTrigger asChild>
         <Button variant="ghost">
           <LuEllipsisVertical />
         </Button>

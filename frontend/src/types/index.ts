@@ -13,7 +13,7 @@ export interface Source {
 
 export interface Message {
   role: MessageRoleType;
-  text: string;
+  content: string;
 }
 
 export type MessageRoleType = (typeof MessageRole)[keyof typeof MessageRole];

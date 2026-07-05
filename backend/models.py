@@ -1,6 +1,8 @@
 from sqlmodel import SQLModel, Field
 from datetime import datetime
+from enum import Enum
 import uuid
+from pydantic import BaseModel
 
 
 class Notebook(SQLModel, table=True):
@@ -16,3 +18,13 @@ class Source(SQLModel, table=True):
     file_path: str  # data/notebooks/<notebook_id>/<filename>
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
     status: str = Field(default="pending")
+
+
+class Role(Enum):
+    USER = "user"
+    ASSISTANT = "assistant"
+
+
+class Message(BaseModel):
+    role: Role
+    content: str
