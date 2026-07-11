@@ -1,9 +1,10 @@
-from typing import Any, Mapping, Sequence
+from typing import Any, AsyncIterable, Mapping, Sequence
 
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
 from backend.chroma import get_vector_store
 from backend.chroma import model
-from ollama import ChatResponse
+from ollama import AsyncClient, ChatResponse
 from ollama import chat
 
 from backend.models import Message
@@ -11,8 +12,8 @@ from backend.models import Message
 router = APIRouter(prefix="/query")
 
 
-@router.post("/")
-async def ask(conversation: list[Message], notebook: str):
+@router.post("/", response_class=StreamingResponse)
+async def ask(conversation: list[Message], notebook: str) -> StreamingResponse:
     question = conversation[-1].content
     collection = await get_vector_store(notebook)
     results = collection.similarity_search_with_relevance_scores(question, k=3)
@@ -22,12 +23,17 @@ async def ask(conversation: list[Message], notebook: str):
 
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
 
-    response: ChatResponse = chat(
-        model=model,
-        messages=map_messages(conversation=conversation, context=context_text),
-    )
+    async def generate() -> AsyncIterable[str]:
+        client = AsyncClient()
+        async for chunk in await client.chat(
+            model=model,
+            messages=map_messages(conversation=conversation, context=context_text),
+            stream=True,
+        ):
+            if chunk.message.content:
+                yield chunk.message.content
 
-    return {"answer": response.message.content}
+    return StreamingResponse(generate(), media_type="text/plain")
 
 
 def map_messages(conversation: list[Message], context: str):

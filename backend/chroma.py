@@ -1,3 +1,5 @@
+from typing import NoReturn
+
 import chromadb
 import asyncio
 from chromadb.config import Settings
@@ -31,7 +33,7 @@ async def get_vector_store(name: str):
     )
 
 
-async def chunk_and_save(file: str, collection: str, source_id: str):
+async def chunk_and_save(file: str, collection: str, source_id: str) -> None:
     loop = asyncio.get_event_loop()
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=300, chunk_overlap=50, length_function=len, add_start_index=True

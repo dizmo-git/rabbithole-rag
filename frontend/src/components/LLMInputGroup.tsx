@@ -28,12 +28,20 @@ export function LLMInputGroup({ messages, setMessages }: LLMInputGroupProps) {
     const newMessage: Message = { content: input, role: MessageRole.User };
     const updatedMessages = [...messages, newMessage];
 
-    setMessages(updatedMessages);
-    const answer: Message = {
-      content: await ask(updatedMessages, selectedNotebook),
+    const assistantMessage: Message = {
+      content: "",
       role: MessageRole.Assistant,
     };
-    setMessages((prev) => [...prev, answer]);
+    setMessages([...updatedMessages, assistantMessage]);
+
+    await ask(updatedMessages, selectedNotebook, (delta) => {
+      setMessages((prev) => {
+        const next = [...prev];
+        const last = next[next.length - 1];
+        next[next.length - 1] = { ...last, content: last.content + delta };
+        return next;
+      });
+    });
   }
 
   return (
