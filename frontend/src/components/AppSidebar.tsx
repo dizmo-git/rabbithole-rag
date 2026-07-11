@@ -6,13 +6,12 @@ import {
   SidebarGroupLabel,
   SidebarGroupContent,
   SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
   SidebarFooter,
 } from "@/components/ui/sidebar";
 import { NotebookSwitcher } from "./NotebookSwitcher";
 import {
   addSourceToNotebook,
+  deleteSource,
   getNotebooks,
   getSourcesByNotebook,
 } from "@/api/notebooks";
@@ -21,7 +20,7 @@ import { useNotebook } from "./NotebookProvider";
 import { UploadSourceButton } from "./UploadSourceButton";
 import { NewNotebookAlert } from "./NewNotebookAlert";
 import type { Source } from "@/types";
-import { Spinner } from "./ui/spinner";
+import { SourceItem } from "./SourceItem";
 
 export function AppSidebar() {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -46,6 +45,15 @@ export function AppSidebar() {
     const newSource = await addSourceToNotebook(selectedNotebook);
     setSources((prev) => [...prev, newSource]);
     startPolling();
+  };
+
+  const handleDeleteSource = async (source: Source) => {
+    try {
+      await deleteSource(source.id, selectedNotebook);
+      setSources((prev) => prev.filter((s) => s.id !== source.id));
+    } catch (err) {
+      console.error("Failed to delete source", err);
+    }
   };
 
   useEffect(() => {
@@ -95,12 +103,11 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {sources.map((source) => (
-                <SidebarMenuItem key={source.id}>
-                  <SidebarMenuButton title={source.filename}>
-                    {source.status === "pending" && <Spinner />}
-                    {source.filename}
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <SourceItem
+                  key={source.id}
+                  source={source}
+                  onDelete={handleDeleteSource}
+                />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>

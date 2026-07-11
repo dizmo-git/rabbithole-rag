@@ -44,6 +44,10 @@ async def chunk_and_save(file: str, collection: str, source_id: str) -> None:
     )
     chunks = text_splitter.split_documents(documents)
 
+    # Just testing for now
+    for chunk in chunks:
+        chunk.metadata["source_id"] = source_id
+
     await save_to_chroma(chunks, collection)
 
     with Session(database.engine) as session:
@@ -64,3 +68,8 @@ async def save_to_chroma(chunks: list[Document], collection: str):
         batch = filtered_chunks[i : i + BATCH_SIZE]
         await loop.run_in_executor(None, lambda b=batch: vector_store.add_documents(b))
         print(f"Saved {len(batch)} chunks to {CHROMA_PATH}.")
+
+
+async def delete_embeddings(source_id: str, collection: str):
+    vector_store = await get_vector_store(collection)
+    vector_store.delete(where={"source_id": source_id})

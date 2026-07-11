@@ -6,7 +6,7 @@ from tkinter import filedialog
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
 from backend.database import get_session
 from backend.models import Notebook, Source
-from backend.chroma import chunk_and_save
+from backend.chroma import chunk_and_save, delete_embeddings
 from pathlib import Path
 from sqlmodel import Session, select
 
@@ -46,6 +46,33 @@ async def upload_source(
         background_tasks=background_tasks,
         session=session,
     )
+
+
+@router.delete("/del/")
+async def delete_source(
+    source_id: str, notebook_name: str, session: Session = Depends(get_session)
+):
+    source = session.exec(select(Source).where(Source.id == source_id)).first()
+
+    if source is None:
+        raise HTTPException(status_code=404, detail="Source does not exist")
+
+    notebook = session.exec(
+        select(Notebook).where(Notebook.name == notebook_name)
+    ).first()
+
+    if notebook is None:
+        raise HTTPException(status_code=404, detail="Notebook does not exist")
+
+    if source.notebook_id != notebook.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Source does not belong to the specified notebook",
+        )
+
+    await delete_embeddings(source_id=source_id, collection=notebook_name)
+    session.delete(source)
+    session.commit()
 
 
 async def ingest_source(

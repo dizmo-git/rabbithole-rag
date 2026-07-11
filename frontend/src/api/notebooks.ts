@@ -26,3 +26,12 @@ export const newNotebook = async (name: string): Promise<string> => {
   });
   return res.data.name;
 };
+
+export const deleteSource = async (
+  id: string,
+  notebook: string,
+): Promise<void> => {
+  await api.delete(`/sources/del/`, {
+    params: { source_id: id, notebook_name: notebook },
+  });
+};

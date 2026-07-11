@@ -13,7 +13,9 @@ export default function Layout({
   headerActions?: React.ReactNode;
 }) {
   return (
-    <SidebarProvider>
+    <SidebarProvider
+      style={{ "--sidebar-width": "24rem" } as React.CSSProperties}
+    >
       <AppSidebar />
       <SidebarInset>
         <main className="flex flex-col h-screen">
