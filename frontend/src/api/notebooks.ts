@@ -13,9 +13,21 @@ export const getSourcesByNotebook = async (name: string): Promise<Source[]> => {
   return res.data;
 };
 
-export const addSourceToNotebook = async (name: string): Promise<Source> => {
-  const res = await api.post<Source>("/sources/add/", null, {
+export const addFileSourceToNotebook = async (
+  name: string,
+): Promise<Source> => {
+  const res = await api.post<Source>("/sources/addfile/", null, {
     params: { notebook_name: name },
+  });
+  return res.data;
+};
+
+export const addLinkSourceToNotebook = async (
+  link: string,
+  name: string,
+): Promise<Source> => {
+  const res = await api.post<Source>("/sources/addlink/", null, {
+    params: { link: link, notebook_name: name },
   });
   return res.data;
 };

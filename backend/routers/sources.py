@@ -2,6 +2,7 @@ import os
 import shutil
 import tkinter as tk
 
+from ingestors import get_ingestor
 from tkinter import filedialog
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
 from backend.database import get_session
@@ -30,8 +31,8 @@ async def sources(notebook: str, session: Session = Depends(get_session)):
     return sources
 
 
-@router.post("/add/")
-async def upload_source(
+@router.post("/addfile/")
+async def upload_file(
     notebook_name: str,
     background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
@@ -46,6 +47,24 @@ async def upload_source(
         background_tasks=background_tasks,
         session=session,
     )
+
+
+@router.post("/addlink/")
+async def upload_link(
+    link: str,
+    notebook_name: str,
+    background_tasks: BackgroundTasks,
+    session: Session = Depends(get_session),
+):
+    notebook = session.exec(
+        select(Notebook).where(Notebook.name == notebook_name)
+    ).first()
+
+    if notebook is None:
+        raise HTTPException(status_code=404, detail="Notebook does not exist")
+
+    ingestor = get_ingestor(link)
+    chunks = await ingestor.ingest(link, notebook.id)
 
 
 @router.delete("/del/")

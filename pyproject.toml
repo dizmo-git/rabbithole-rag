@@ -18,6 +18,7 @@ dependencies = [
     "langchain-docling",
     "ollama",
     "sqlmodel",
+    "requests",
 ]
 requires-python = ">=3.13"
 authors = [

@@ -10,17 +10,18 @@ import {
 } from "@/components/ui/sidebar";
 import { NotebookSwitcher } from "./NotebookSwitcher";
 import {
-  addSourceToNotebook,
+  addFileSourceToNotebook,
+  addLinkSourceToNotebook,
   deleteSource,
   getNotebooks,
   getSourcesByNotebook,
 } from "@/api/notebooks";
 import { useEffect, useRef, useState } from "react";
 import { useNotebook } from "./NotebookProvider";
-import { UploadSourceButton } from "./UploadSourceButton";
 import { NewNotebookAlert } from "./NewNotebookAlert";
 import type { Source } from "@/types";
 import { SourceItem } from "./SourceItem";
+import { UploadSourceAlert } from "./UploadSourceAlert";
 
 export function AppSidebar() {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -40,11 +41,17 @@ export function AppSidebar() {
     return names;
   };
 
-  const handleUploadSource = async () => {
+  const handleUploadFileSource = async () => {
     if (!selectedNotebook) return;
-    const newSource = await addSourceToNotebook(selectedNotebook);
+    const newSource = await addFileSourceToNotebook(selectedNotebook);
     setSources((prev) => [...prev, newSource]);
     startPolling();
+  };
+
+  const handleUploadLinkSource = async (link: string) => {
+    if (!selectedNotebook) return;
+    const newSource = await addLinkSourceToNotebook(link, selectedNotebook);
+    //TODO
   };
 
   const handleDeleteSource = async (source: Source) => {
@@ -114,8 +121,10 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
-        <UploadSourceButton onClick={handleUploadSource} />
-        {/* <UploadSourceAlert /> */}
+        <UploadSourceAlert
+          onFile={handleUploadFileSource}
+          onLink={handleUploadLinkSource}
+        />
       </SidebarFooter>
     </Sidebar>
   );

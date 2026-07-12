@@ -28,3 +28,7 @@ class Role(Enum):
 class Message(BaseModel):
     role: Role
     content: str
+
+
+class Chunk:
+    pass
