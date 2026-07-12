@@ -22,6 +22,7 @@ async def ask(conversation: list[Message], notebook: str) -> StreamingResponse:
         print(f"Similarity for chunk {i}:\t{results[i][1]}")
 
     context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
+    print(context_text)
 
     async def generate() -> AsyncIterable[str]:
         client = AsyncClient()

@@ -51,7 +51,8 @@ export function AppSidebar() {
   const handleUploadLinkSource = async (link: string) => {
     if (!selectedNotebook) return;
     const newSource = await addLinkSourceToNotebook(link, selectedNotebook);
-    //TODO
+    setSources((prev) => [...prev, newSource]);
+    startPolling();
   };
 
   const handleDeleteSource = async (source: Source) => {

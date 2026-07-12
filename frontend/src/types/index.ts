@@ -5,12 +5,13 @@ export interface Notebook {
 export interface Source {
   id: string;
   notebook_id: string;
-  filename: string;
-  file_path: string;
+  source_type: "file" | "post";
+  filename: string | null;
+  file_path: string | null;
+  url: string | null;
   uploaded_at: Date;
   status: string;
 }
-
 export interface Message {
   role: MessageRoleType;
   content: string;

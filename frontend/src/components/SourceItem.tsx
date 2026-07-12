@@ -25,11 +25,13 @@ export function SourceItem({ source, onRename, onDelete }: SourceItemProps) {
   return (
     <SidebarMenuItem className="relative rounded-md group/item hover:bg-accent hover:text-accent-foreground transition-colors">
       <SidebarMenuButton
-        title={source.filename}
+        title={source.filename ?? source.url ?? "Untitled source"}
         disabled={isPending}
         className="pr-8 hover:bg-transparent"
       >
-        <span className="truncate">{source.filename}</span>
+        <span className="truncate">
+          {source.filename ?? source.url ?? "Untitled source"}
+        </span>
       </SidebarMenuButton>
 
       {isPending ? (

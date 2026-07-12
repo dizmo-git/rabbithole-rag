@@ -2,18 +2,15 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from backend.db_seed import seed
-from backend.hackernews import test_hn
 from backend.routers import notebooks, query, sources
 
 origins = ["http://localhost", "http://localhost:5173"]
-doSeed = False
+doSeed = True
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     print("Rabbithole - Startup")
-
-    # test_hn()
 
     # Seeding
     if doSeed:
@@ -24,7 +21,7 @@ async def lifespan(app: FastAPI):
     print("Rabbithole - Cleanup")
 
 
-app = FastAPI(title="Rabbithole RAG API", lifespan=lifespan)
+app = FastAPI(title="Rabbithole RAG API", lifespan=lifespan, debug=True)
 
 app.add_middleware(
     CORSMiddleware,

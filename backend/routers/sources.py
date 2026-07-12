@@ -6,8 +6,8 @@ from ingestors import get_ingestor
 from tkinter import filedialog
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
 from backend.database import get_session
-from backend.models import Notebook, Source
-from backend.chroma import chunk_and_save, delete_embeddings
+from backend.models import Notebook, Source, SourceType
+from backend.chroma import chunk_and_save, delete_embeddings, save_chunks
 from pathlib import Path
 from sqlmodel import Session, select
 
@@ -63,8 +63,19 @@ async def upload_link(
     if notebook is None:
         raise HTTPException(status_code=404, detail="Notebook does not exist")
 
+    source = Source(notebook_id=notebook.id, source_type=SourceType.POST, url=link)
+    session.add(source)
+    session.commit()
+    session.refresh(source)
+
+    background_tasks.add_task(ingest_link, link, notebook.name, source.id)
+    return source
+
+
+async def ingest_link(link: str, collection: str, source_id: str) -> None:
     ingestor = get_ingestor(link)
-    chunks = await ingestor.ingest(link, notebook.id)
+    chunks = await ingestor.ingest(link, source_id)
+    await save_chunks(chunks, collection, source_id)
 
 
 @router.delete("/del/")
