@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -167,6 +168,18 @@
   --chart-4: oklch(0.371 0 0);
 
   --chart-5: oklch(0.269 0 0);
+}
+
+.prose {
+  --tw-prose-headings: oklch(0.35 0 0);
+  --tw-prose-pre-bg: transparent;
+  --tw-prose-invert-headings: oklch(0.85 0 0);
+  --tw-prose-invert-pre-bg: transparent;
+}
+
+.hljs {
+  background: oklch(0.25 0 0) !important;
+  border-radius: var(--radius-lg);
 }
 
 @layer base {

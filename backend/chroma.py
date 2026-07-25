@@ -18,7 +18,7 @@ CHROMA_PATH = "chroma"
 BATCH_SIZE = 50
 
 embeddings = OllamaEmbeddings(model="nomic-embed-text")
-model = "llama3.2:latest"
+model = "qwen3.5:9b"
 
 client = chromadb.PersistentClient(
     path=CHROMA_PATH, settings=Settings(allow_reset=True)
