@@ -18,7 +18,9 @@ CHROMA_PATH = "chroma"
 BATCH_SIZE = 50
 
 embeddings = OllamaEmbeddings(model="nomic-embed-text")
-model = "qwen3.5:9b"
+model = "llama3.2:latest"
+# llama3.2:latest
+# qwen3.5:9b
 
 client = chromadb.PersistentClient(
     path=CHROMA_PATH, settings=Settings(allow_reset=True)
@@ -36,7 +38,7 @@ async def get_vector_store(name: str):
 async def chunk_and_save(file: str, collection: str, source_id: str) -> None:
     loop = asyncio.get_event_loop()
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=300, chunk_overlap=50, length_function=len, add_start_index=True
+        chunk_size=1800, chunk_overlap=250, length_function=len, add_start_index=True
     )
 
     documents = await loop.run_in_executor(
