@@ -17,6 +17,7 @@ from backend.models import Chunk, Source
 CHROMA_PATH = "chroma"
 BATCH_SIZE = 50
 
+
 embeddings = OllamaEmbeddings(model="nomic-embed-text")
 model = "llama3.2:latest"
 # llama3.2:latest

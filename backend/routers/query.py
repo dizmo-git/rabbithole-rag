@@ -12,6 +12,10 @@ from backend.models import Message
 
 router = APIRouter(prefix="/query")
 
+ANCESTOR_K = 1
+MIN_RELEVANCE_SCORE = 0.3
+MAX_ROOT_WALK = 25
+
 
 @router.post("/", response_class=StreamingResponse)
 async def ask(conversation: list[Message], notebook: str) -> StreamingResponse:
@@ -32,12 +36,13 @@ async def ask(conversation: list[Message], notebook: str) -> StreamingResponse:
                 combined_results.append((doc, score))
 
     combined_results.sort(key=lambda x: x[1], reverse=True)
+    combined_results = [r for r in combined_results if r[1] >= MIN_RELEVANCE_SCORE]
     top_results = combined_results[:10]
 
     for i, (doc, score) in enumerate(top_results):
         print(f"Similarity for chunk {i}:\t{score}")
 
-    context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in top_results])
+    context_text = build_context(collection, top_results)
     print(context_text)
 
     async def generate() -> AsyncIterable[str]:
@@ -52,6 +57,62 @@ async def ask(conversation: list[Message], notebook: str) -> StreamingResponse:
                 yield chunk.message.content
 
     return StreamingResponse(generate(), media_type="text/plain")
+
+
+def _fetch_by_id(collection, chunk_id: str) -> dict | None:
+    raw = collection.get(ids=[chunk_id], include=["documents", "metadatas"])
+    if not raw["ids"]:
+        return None
+    return {
+        "id": raw["ids"][0],
+        "content": raw["documents"][0],
+        "metadata": raw["metadatas"][0],
+    }
+
+
+def get_thread_ancestors(collection, start_meta: dict, k: int) -> list[dict]:
+    full_chain: list[dict] = []
+    current_meta = start_meta
+    hops = 0
+
+    while hops < MAX_ROOT_WALK:
+        parent_id = current_meta.get("immediate_parent_id")
+        if not parent_id:
+            break
+        parent = _fetch_by_id(collection, parent_id)
+        if parent is None:
+            break
+        full_chain.append(parent)
+        current_meta = parent["metadata"]
+        hops += 1
+
+    if not full_chain:
+        return []
+
+    full_chain.reverse()  # root first, nearest parent last
+    nearest = full_chain[-k:]
+    root = full_chain[0]
+    nearest_ids = {a["id"] for a in nearest}
+    return nearest if root["id"] in nearest_ids else [root] + nearest
+
+
+def build_context(collection, top_results) -> str:
+    blocks = []
+    for doc, _score in top_results:
+        meta = doc.metadata
+        if meta.get("source_type") != "post":
+            blocks.append(doc.page_content)
+            continue
+
+        ancestors = get_thread_ancestors(collection, meta, ANCESTOR_K)
+        if not ancestors:
+            blocks.append(doc.page_content)
+            continue
+
+        thread_parts = [a["content"] for a in ancestors] + [doc.page_content]
+        blocks.append("[forum thread]\n" + "\n---\n".join(thread_parts))
+
+    return "\n\n---\n\n".join(blocks)
 
 
 async def enhance_query(question: str) -> list[str]:
@@ -119,6 +180,10 @@ def construct_system_prompt(context: str):
                 "You are a helpful research assistant. Answer the user's question "
                 "using the context below when it's relevant. If the context doesn't "
                 "help, ignore it and answer from your own knowledge, and say so.\n\n"
+                "Context blocks come from two kinds of sources: plain documents, and "
+                "forum threads. Forum thread blocks are marked '[forum thread]' and "
+                "contain a chain of messages from earliest ancestor down to the most "
+                "relevant reply - read them as a conversation, not isolated facts.\n\n"
                 f"Context:\n{context}"
             ),
         },
