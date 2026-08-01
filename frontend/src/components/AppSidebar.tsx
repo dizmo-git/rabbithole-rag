@@ -15,6 +15,7 @@ import {
   deleteSource,
   getNotebooks,
   getSourcesByNotebook,
+  renameSource,
 } from "@/api/notebooks";
 import { useEffect, useRef, useState } from "react";
 import { useNotebook } from "./NotebookProvider";
@@ -22,12 +23,14 @@ import { NewNotebookAlert } from "./NewNotebookAlert";
 import type { Source } from "@/types";
 import { SourceItem } from "./SourceItem";
 import { UploadSourceAlert } from "./UploadSourceAlert";
+import { RenameSourceDialog } from "./RenameSourceDialog";
 
 export function AppSidebar() {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [notebookNames, setNotebookNames] = useState<string[]>([]);
   const { selectedNotebook, setSelectedNotebook } = useNotebook();
   const [sources, setSources] = useState<Source[]>([]);
+  const [renameTarget, setRenameTarget] = useState<Source | null>(null);
 
   const fetchSources = async () => {
     const sources = await getSourcesByNotebook(selectedNotebook);
@@ -61,6 +64,19 @@ export function AppSidebar() {
       setSources((prev) => prev.filter((s) => s.id !== source.id));
     } catch (err) {
       console.error("Failed to delete source", err);
+    }
+  };
+
+  const handleConfirmRename = async (source: Source, newName: string) => {
+    try {
+      const updated = await renameSource(source.id, selectedNotebook, newName);
+      setSources((prev) =>
+        prev.map((s) => (s.id === updated.id ? updated : s)),
+      );
+    } catch (err) {
+      console.error("Failed to rename source", err);
+    } finally {
+      setRenameTarget(null);
     }
   };
 
@@ -114,6 +130,7 @@ export function AppSidebar() {
                 <SourceItem
                   key={source.id}
                   source={source}
+                  onRename={setRenameTarget}
                   onDelete={handleDeleteSource}
                 />
               ))}
@@ -127,6 +144,12 @@ export function AppSidebar() {
           onLink={handleUploadLinkSource}
         />
       </SidebarFooter>
+      <RenameSourceDialog
+        source={renameTarget}
+        open={renameTarget !== null}
+        onOpenChange={(open) => !open && setRenameTarget(null)}
+        onConfirm={handleConfirmRename}
+      />
     </Sidebar>
   );
 }

@@ -47,3 +47,14 @@ export const deleteSource = async (
     params: { source_id: id, notebook_name: notebook },
   });
 };
+
+export const renameSource = async (
+  id: string,
+  notebook: string,
+  newName: string,
+): Promise<Source> => {
+  const res = await api.patch<Source>("/sources/rename/", null, {
+    params: { source_id: id, notebook_name: notebook, new_name: newName },
+  });
+  return res.data;
+};

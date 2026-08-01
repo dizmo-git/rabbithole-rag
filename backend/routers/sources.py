@@ -105,6 +105,39 @@ async def delete_source(
     session.commit()
 
 
+@router.patch("/rename/")
+async def rename_source(
+    source_id: str,
+    new_name: str,
+    notebook_name: str,
+    session: Session = Depends(get_session),
+):
+    source = session.exec(select(Source).where(Source.id == source_id)).first()
+
+    if source is None:
+        raise HTTPException(status_code=404, detail="Source does not exist")
+
+    notebook = session.exec(
+        select(Notebook).where(Notebook.name == notebook_name)
+    ).first()
+
+    if notebook is None:
+        raise HTTPException(status_code=404, detail="Notebook does not exist")
+
+    if source.notebook_id != notebook.id:
+        raise HTTPException(
+            status_code=403,
+            detail="Source does not belong to the specified notebook",
+        )
+
+    source.filename = new_name
+    session.add(source)
+    session.commit()
+    session.refresh(source)
+
+    return source
+
+
 async def ingest_source(
     notebook_name: str,
     path: str,
