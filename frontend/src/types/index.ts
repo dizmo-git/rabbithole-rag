@@ -12,9 +12,19 @@ export interface Source {
   uploaded_at: Date;
   status: string;
 }
+
+export interface Citation {
+  id: string;
+  source_type: string;
+  score: number;
+  title: string;
+  content: string;
+}
+
 export interface Message {
   role: MessageRoleType;
   content: string;
+  citations?: Citation[];
 }
 
 export type MessageRoleType = (typeof MessageRole)[keyof typeof MessageRole];

@@ -34,14 +34,26 @@ export function LLMInputGroup({ messages, setMessages }: LLMInputGroupProps) {
     };
     setMessages([...updatedMessages, assistantMessage]);
 
-    await ask(updatedMessages, selectedNotebook, (delta) => {
-      setMessages((prev) => {
-        const next = [...prev];
-        const last = next[next.length - 1];
-        next[next.length - 1] = { ...last, content: last.content + delta };
-        return next;
-      });
-    });
+    await ask(
+      updatedMessages,
+      selectedNotebook,
+      (delta) => {
+        setMessages((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          next[next.length - 1] = { ...last, content: last.content + delta };
+          return next;
+        });
+      },
+      (citations) => {
+        setMessages((prev) => {
+          const next = [...prev];
+          const last = next[next.length - 1];
+          next[next.length - 1] = { ...last, citations };
+          return next;
+        });
+      },
+    );
   }
 
   return (

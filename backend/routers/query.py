@@ -1,14 +1,16 @@
+from sqlmodel import Session, select, col
 from typing import Any, AsyncIterable, Mapping, Sequence
-
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from backend.chroma import get_vector_store
 from backend.chroma import model
 from ollama import AsyncClient, ChatResponse
 from ollama import chat
 import re
+import json
 
-from backend.models import Message
+from backend.database import get_session
+from backend.models import Message, Source
 
 router = APIRouter(prefix="/query")
 
@@ -18,7 +20,9 @@ MAX_ROOT_WALK = 25
 
 
 @router.post("/", response_class=StreamingResponse)
-async def ask(conversation: list[Message], notebook: str) -> StreamingResponse:
+async def ask(
+    conversation: list[Message], notebook: str, session: Session = Depends(get_session)
+) -> StreamingResponse:
     question = conversation[-1].content
     collection = await get_vector_store(notebook)
 
@@ -39,6 +43,8 @@ async def ask(conversation: list[Message], notebook: str) -> StreamingResponse:
     combined_results = [r for r in combined_results if r[1] >= MIN_RELEVANCE_SCORE]
     top_results = combined_results[:10]
 
+    citations = build_citations(session=session, top_results=top_results)
+
     for i, (doc, score) in enumerate(top_results):
         print(f"Similarity for chunk {i}:\t{score}")
 
@@ -46,6 +52,8 @@ async def ask(conversation: list[Message], notebook: str) -> StreamingResponse:
     print(context_text)
 
     async def generate() -> AsyncIterable[str]:
+        yield json.dumps({"sources": citations}) + "\n"
+
         client = AsyncClient()
         async for chunk in await client.chat(
             model=model,
@@ -57,6 +65,33 @@ async def ask(conversation: list[Message], notebook: str) -> StreamingResponse:
                 yield chunk.message.content
 
     return StreamingResponse(generate(), media_type="text/plain")
+
+
+def get_source_titles(session: Session, source_ids: set[str]) -> dict[str, str | None]:
+    if not source_ids:
+        return {}
+    result = session.exec(select(Source).where(col(Source.id).in_(source_ids)))
+    return {s.id: s.filename for s in result}
+
+
+def build_citations(session: Session, top_results) -> list[dict]:
+    source_ids = {
+        doc.metadata.get("source_id")
+        for doc, _ in top_results
+        if doc.metadata.get("source_id")
+    }
+    titles = get_source_titles(session, source_ids)
+
+    return [
+        {
+            "id": doc.metadata.get("id"),
+            "source_type": doc.metadata.get("source_type"),
+            "score": round(score, 4),
+            "title": titles.get(doc.metadata.get("source_id")) or "Untitled",
+            "content": doc.page_content,
+        }
+        for doc, score in top_results
+    ]
 
 
 def _fetch_by_id(collection, chunk_id: str) -> dict | None:

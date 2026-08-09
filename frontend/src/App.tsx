@@ -19,7 +19,12 @@ export default function App() {
         <ScrollArea className="flex-1 min-h-0 pb-4">
           <div className="flex flex-col">
             {messages?.map((m, index) => (
-              <MessageBubble key={index} input={m.content} role={m.role} />
+              <MessageBubble
+                key={index}
+                input={m.content}
+                role={m.role}
+                citations={m.citations}
+              />
             ))}
           </div>
         </ScrollArea>

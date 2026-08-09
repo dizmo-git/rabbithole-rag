@@ -1,12 +1,14 @@
-import { MessageRole, type MessageRoleType } from "@/types";
+import { MessageRole, type Citation, type MessageRoleType } from "@/types";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypeHighlight from "rehype-highlight";
 import "highlight.js/styles/github-dark.css";
+import { CitationList } from "./CitationList";
 
 export interface MessageBubbleProps {
   input: string;
   role: MessageRoleType;
+  citations?: Citation[];
 }
 
 const DEBUG_MARKDOWN = false;
@@ -52,7 +54,11 @@ Ordered:
 That horizontal rule above should render too. And here's a longer paragraph to check line height and paragraph spacing: Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.
 `;
 
-export default function MessageBubble({ input, role }: MessageBubbleProps) {
+export default function MessageBubble({
+  input,
+  role,
+  citations,
+}: MessageBubbleProps) {
   const isUser = role === MessageRole.User;
 
   const bubbleWrapper = `
@@ -73,22 +79,25 @@ export default function MessageBubble({ input, role }: MessageBubbleProps) {
 
   return (
     <div className={bubbleWrapper}>
-      <div className={bubbleBox}>
-        <div className="prose prose-sm dark:prose-invert max-w-none">
-          <ReactMarkdown
-            remarkPlugins={[remarkGfm]}
-            rehypePlugins={[rehypeHighlight]}
-            components={{
-              a: ({ href, children }) => (
-                <a href={href} target="_blank" rel="noopener noreferrer">
-                  {children}
-                </a>
-              ),
-            }}
-          >
-            {content}
-          </ReactMarkdown>
+      <div className="flex flex-col items-start max-w-[75%]">
+        <div className={bubbleBox}>
+          <div className="prose prose-sm dark:prose-invert max-w-none">
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeHighlight]}
+              components={{
+                a: ({ href, children }) => (
+                  <a href={href} target="_blank" rel="noopener noreferrer">
+                    {children}
+                  </a>
+                ),
+              }}
+            >
+              {content}
+            </ReactMarkdown>
+          </div>
         </div>
+        {!isUser && citations && <CitationList citations={citations} />}
       </div>
     </div>
   );
