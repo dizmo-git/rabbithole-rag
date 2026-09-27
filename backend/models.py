@@ -40,6 +40,7 @@ class Role(Enum):
 class Platform(str, Enum):
     HN = "hn"
     REDDIT = "reddit"
+    BLUESKY = "bluesky"
     LOCAL = "local"
 
 

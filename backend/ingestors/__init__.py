@@ -1,6 +1,7 @@
 from urllib.parse import urlparse
 
 from backend.ingestors.base import BaseIngestor
+from backend.ingestors.bluesky import BlueskyIngestor
 from backend.ingestors.generic_url import GenericURLIngestor
 from backend.ingestors.hn import HNIngestor
 from backend.ingestors.reddit import RedditIngestor
@@ -8,6 +9,7 @@ from backend.ingestors.reddit import RedditIngestor
 INGESTOR_REGISTRY: dict[str, type[BaseIngestor]] = {
     "hn": HNIngestor,
     "reddit": RedditIngestor,
+    "bluesky": BlueskyIngestor,
     "generic_url": GenericURLIngestor,
 }
 
@@ -25,6 +27,8 @@ def detect_source_type(url: str) -> str:
         return "hn"
     if "reddit.com" in host:
         return "reddit"
+    if "bsky.app" in host:
+        return "bluesky"
     if "twitter.com" in host or "x.com" in host:
         return "twitter"
 
