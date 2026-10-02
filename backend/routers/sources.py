@@ -4,8 +4,15 @@ import tkinter as tk
 
 from ingestors import get_ingestor
 from tkinter import filedialog
-from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException
+from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, Query
 from backend.database import get_session
+from backend.ingestors.telegram import (
+    DEFAULT_STYLE,
+    MAX_POSTS_LIMIT,
+    ChunkingStyle,
+    is_telegram_url,
+    parse_url,
+)
 from backend.models import Notebook, Source, SourceType
 from backend.chroma import chunk_and_save, delete_embeddings, save_chunks
 from pathlib import Path
@@ -55,6 +62,12 @@ async def upload_link(
     notebook_name: str,
     background_tasks: BackgroundTasks,
     session: Session = Depends(get_session),
+    # Telegram only: how many posts to read, counting back from the newest post (or from
+    # the post in the link). None -> the ingestor's DEFAULT_MAX_POSTS.
+    max_posts: int | None = Query(default=None, ge=1, le=MAX_POSTS_LIMIT),
+    # Telegram only: chunking profile, "dense" (essay/analysis channels) or "news"
+    # (rapid headline feeds). Not exposed in the frontend yet.
+    style: ChunkingStyle = Query(default=DEFAULT_STYLE),
 ):
     notebook = session.exec(
         select(Notebook).where(Notebook.name == notebook_name)
@@ -63,17 +76,33 @@ async def upload_link(
     if notebook is None:
         raise HTTPException(status_code=404, detail="Notebook does not exist")
 
+    # Validate Telegram links up front: ingestion runs as a background task with no error
+    # path, so a bad link (invite, private t.me/c/...) would leave the source "pending".
+    if is_telegram_url(link):
+        try:
+            parse_url(link)
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
+
     source = Source(notebook_id=notebook.id, source_type=SourceType.POST, url=link)
     session.add(source)
     session.commit()
     session.refresh(source)
 
-    background_tasks.add_task(ingest_link, link, notebook.name, source.id)
+    background_tasks.add_task(
+        ingest_link, link, notebook.name, source.id, max_posts, style
+    )
     return source
 
 
-async def ingest_link(link: str, collection: str, source_id: str) -> None:
-    ingestor = get_ingestor(link)
+async def ingest_link(
+    link: str,
+    collection: str,
+    source_id: str,
+    max_posts: int | None = None,
+    style: ChunkingStyle = DEFAULT_STYLE,
+) -> None:
+    ingestor = get_ingestor(link, max_posts=max_posts, style=style)
     chunks = await ingestor.ingest(link, source_id)
     await save_chunks(chunks, collection, source_id)
 

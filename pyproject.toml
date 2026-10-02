@@ -19,6 +19,7 @@ dependencies = [
     "ollama",
     "sqlmodel",
     "requests",
+    "beautifulsoup4",
 ]
 requires-python = ">=3.13"
 authors = [

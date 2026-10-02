@@ -71,7 +71,18 @@ def get_source_titles(session: Session, source_ids: set[str]) -> dict[str, str |
     if not source_ids:
         return {}
     result = session.exec(select(Source).where(col(Source.id).in_(source_ids)))
-    return {s.id: s.filename for s in result}
+    # link sources have no filename unless renamed, show their URL instead of "Untitled"
+    return {s.id: s.filename or s.url for s in result}
+
+
+def get_citation_links(metadata: dict) -> list[str]:
+    # chunks grouping several posts (Telegram) store all their links space-joined in
+    # "permalinks"; single posts (HN, Bluesky, Telegram) only have "permalink"; files neither
+    if metadata.get("permalinks"):
+        return metadata["permalinks"].split()
+    if metadata.get("permalink"):
+        return [metadata["permalink"]]
+    return []
 
 
 def build_citations(session: Session, top_results) -> list[dict]:
@@ -89,6 +100,7 @@ def build_citations(session: Session, top_results) -> list[dict]:
             "score": round(score, 4),
             "title": titles.get(doc.metadata.get("source_id")) or "Untitled",
             "content": doc.page_content,
+            "links": get_citation_links(doc.metadata),
         }
         for doc, score in top_results
     ]

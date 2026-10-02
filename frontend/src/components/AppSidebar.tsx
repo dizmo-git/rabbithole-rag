@@ -51,11 +51,20 @@ export function AppSidebar() {
     startPolling();
   };
 
-  const handleUploadLinkSource = async (link: string) => {
+  const handleUploadLinkSource = async (link: string, maxPosts?: number) => {
     if (!selectedNotebook) return;
-    const newSource = await addLinkSourceToNotebook(link, selectedNotebook);
-    setSources((prev) => [...prev, newSource]);
-    startPolling();
+    try {
+      const newSource = await addLinkSourceToNotebook(
+        link,
+        selectedNotebook,
+        maxPosts,
+      );
+      setSources((prev) => [...prev, newSource]);
+      startPolling();
+    } catch (err) {
+      // e.g. 400 for a private/invite Telegram link
+      console.error("Failed to add link source", err);
+    }
   };
 
   const handleDeleteSource = async (source: Source) => {

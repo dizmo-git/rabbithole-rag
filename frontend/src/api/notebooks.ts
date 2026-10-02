@@ -25,9 +25,11 @@ export const addFileSourceToNotebook = async (
 export const addLinkSourceToNotebook = async (
   link: string,
   name: string,
+  maxPosts?: number, // Telegram only: how many posts back to ingest
 ): Promise<Source> => {
   const res = await api.post<Source>("/sources/addlink/", null, {
-    params: { link: link, notebook_name: name },
+    // axios drops undefined params, so max_posts is only sent when given
+    params: { link: link, notebook_name: name, max_posts: maxPosts },
   });
   return res.data;
 };

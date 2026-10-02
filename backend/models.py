@@ -41,6 +41,7 @@ class Platform(str, Enum):
     HN = "hn"
     REDDIT = "reddit"
     BLUESKY = "bluesky"
+    TELEGRAM = "telegram"
     LOCAL = "local"
 
 
@@ -52,6 +53,8 @@ class PostOrigin(BaseModel):
     permalink: str | None
     ancestor_ids: list[str]  # root -> immediate parent, chunk ids. Empty for root posts
     # do not write straight into Chroma metadata, it rejects empty lists.
+    permalinks: list[str] = []  # every post this chunk covers, when a chunk groups several
+    # posts (Telegram). Empty means "just `permalink`". Stored space-joined in Chroma.
 
 
 class Chunk(BaseModel):

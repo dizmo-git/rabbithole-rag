@@ -19,6 +19,7 @@ export interface Citation {
   score: number;
   title: string;
   content: string;
+  links: string[]; // original posts this chunk came from (empty for files)
 }
 
 export interface Message {

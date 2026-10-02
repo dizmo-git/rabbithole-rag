@@ -114,5 +114,9 @@ def chunks_to_documents(chunks: list[Chunk]) -> list[Document]:
                 metadata["permalink"] = c.origin.permalink
             if c.origin.ancestor_ids:
                 metadata["immediate_parent_id"] = c.origin.ancestor_ids[-1]
+            if len(c.origin.permalinks) > 1:
+                # Chroma metadata can't hold lists; URLs have no spaces, so join on " "
+                # and split back in query.build_citations.
+                metadata["permalinks"] = " ".join(c.origin.permalinks)
         documents.append(Document(page_content=c.content, metadata=metadata))
     return documents

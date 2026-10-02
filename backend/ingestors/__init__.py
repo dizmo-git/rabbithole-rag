@@ -5,22 +5,44 @@ from backend.ingestors.bluesky import BlueskyIngestor
 from backend.ingestors.generic_url import GenericURLIngestor
 from backend.ingestors.hn import HNIngestor
 from backend.ingestors.reddit import RedditIngestor
+from backend.ingestors.telegram import (
+    DEFAULT_STYLE,
+    ChunkingStyle,
+    TelegramIngestor,
+    is_telegram_url,
+)
 
 INGESTOR_REGISTRY: dict[str, type[BaseIngestor]] = {
     "hn": HNIngestor,
     "reddit": RedditIngestor,
     "bluesky": BlueskyIngestor,
+    "telegram": TelegramIngestor,
     "generic_url": GenericURLIngestor,
 }
 
 
-def get_ingestor(url: str) -> BaseIngestor:
+def get_ingestor(
+    url: str,
+    max_posts: int | None = None,
+    style: ChunkingStyle = DEFAULT_STYLE,
+) -> BaseIngestor:
     source_type = detect_source_type(url)
     ingestor_cls = INGESTOR_REGISTRY.get(source_type, GenericURLIngestor)
+    # max_posts (how far back to read) and style (how to chunk) only mean something for
+    # channel timelines, the other ingestors keep their no-arg constructors
+    if ingestor_cls is TelegramIngestor:
+        if max_posts is None:
+            return TelegramIngestor(style=style)
+        return TelegramIngestor(max_posts=max_posts, style=style)
     return ingestor_cls()
 
 
 def detect_source_type(url: str) -> str:
+    # exact host match (a substring check for "t.me" would also hit e.g. "art.me"),
+    # tolerates links pasted without a scheme
+    if is_telegram_url(url):
+        return "telegram"
+
     host = urlparse(url).netloc.lower()
 
     if "news.ycombinator.com" in host:
