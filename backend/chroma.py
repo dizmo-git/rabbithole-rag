@@ -1,3 +1,4 @@
+from functools import cache
 from typing import NoReturn
 
 import chromadb
@@ -9,30 +10,36 @@ from langchain_core.documents import Document
 from langchain_docling.loader import DoclingLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_community.vectorstores.utils import filter_complex_metadata
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from backend import database
-from backend.models import Chunk, Source
+from backend.models import Chunk, Notebook, Source
 
 CHROMA_PATH = "chroma"
 BATCH_SIZE = 50
-
-
-embeddings = OllamaEmbeddings(model="nomic-embed-text")
-model = "llama3.2:latest"
-# llama3.2:latest
-# qwen3.5:9b
 
 client = chromadb.PersistentClient(
     path=CHROMA_PATH, settings=Settings(allow_reset=True)
 )
 
 
+@cache
+def get_embeddings(model: str) -> OllamaEmbeddings:
+    return OllamaEmbeddings(model=model)
+
+
 async def get_vector_store(name: str):
+    # Each notebook embeds with the model it was created with (Notebook.embedding_model),
+    # never the current default, or queries would hit vectors from a different model.
+    with Session(database.engine) as session:
+        notebook = session.exec(select(Notebook).where(Notebook.name == name)).first()
+    if notebook is None:
+        raise RuntimeError(f"Notebook not found: {name}")
+
     return Chroma(
         client=client,
         collection_name=name,
-        embedding_function=embeddings,
+        embedding_function=get_embeddings(notebook.embedding_model),
     )
 
 

@@ -135,6 +135,10 @@ SEMANTIC_GROUPING = True
 SEMANTIC_DEBUG = False  # print every "semantic #a -> #b: score" comparison (for tuning)
 MIN_SEMANTIC_POSTS = 10  # fewer candidates than this -> the mean is meaningless, gate off
 EMBED_BATCH = 64
+# Pinned, not the notebook's model: semantic_threshold was calibrated on nomic, and these
+# vectors only drive grouping, they're never stored. If it isn't pulled, embedding fails
+# and grouping falls back to time + length.
+SEMANTIC_EMBED_MODEL = "nomic-embed-text:latest"
 
 
 def is_telegram_url(url: str) -> bool:
@@ -503,7 +507,9 @@ class TelegramIngestor(BaseIngestor):
             return None
 
         # imported here: backend.chroma opens the Chroma client on import
-        from backend.chroma import embeddings
+        from backend.chroma import get_embeddings
+
+        embeddings = get_embeddings(SEMANTIC_EMBED_MODEL)
 
         texts = [p.embed_text() for p in candidates]
         loop = asyncio.get_running_loop()

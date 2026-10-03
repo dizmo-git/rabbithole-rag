@@ -34,9 +34,12 @@ export const addLinkSourceToNotebook = async (
   return res.data;
 };
 
-export const newNotebook = async (name: string): Promise<string> => {
+export const newNotebook = async (
+  name: string,
+  embeddingModel?: string, // fixed for the notebook's lifetime; omitted = default
+): Promise<string> => {
   const res = await api.post<Notebook>("/notebooks/new", null, {
-    params: { name: name },
+    params: { name: name, embedding_model: embeddingModel },
   });
   return res.data.name;
 };

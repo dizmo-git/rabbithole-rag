@@ -2,6 +2,19 @@ export interface Notebook {
   name: string;
 }
 
+// mirrors backend/settings.py AppSettings
+export interface AppSettings {
+  chat_model: string;
+  embedding_model: string; // default for new notebooks, existing ones keep theirs
+}
+
+export interface OllamaModel {
+  name: string;
+  family: string | null;
+  parameter_size: string | null;
+  capabilities: string[]; // e.g. ["completion"] or ["embedding"], empty on old Ollama
+}
+
 export interface Source {
   id: string;
   notebook_id: string;

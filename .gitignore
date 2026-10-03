@@ -53,6 +53,7 @@ backend/chroma/*
 *.sqlite3
 data/raw/
 data/processed/
+data/settings.json
 
 # Models / large files
 *.bin

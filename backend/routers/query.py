@@ -1,16 +1,16 @@
 from sqlmodel import Session, select, col
 from typing import Any, AsyncIterable, Mapping, Sequence
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from backend.chroma import get_vector_store
-from backend.chroma import model
 from ollama import AsyncClient, ChatResponse
 from ollama import chat
 import re
 import json
 
 from backend.database import get_session
-from backend.models import Message, Source
+from backend.models import Message, Notebook, Source
+from backend.settings import get_settings
 
 router = APIRouter(prefix="/query")
 
@@ -23,10 +23,16 @@ MAX_ROOT_WALK = 25
 async def ask(
     conversation: list[Message], notebook: str, session: Session = Depends(get_session)
 ) -> StreamingResponse:
+    if not session.exec(select(Notebook).where(Notebook.name == notebook)).first():
+        raise HTTPException(status_code=404, detail="Notebook not found")
+
     question = conversation[-1].content
     collection = await get_vector_store(notebook)
+    # read once, so a settings change mid-request doesn't switch models halfway
+    chat_model = get_settings().chat_model
+    print(f"Chat model: {chat_model}")
 
-    queries = await enhance_query(question)
+    queries = await enhance_query(question, chat_model)
     print(queries)
 
     seen_ids = set()
@@ -56,7 +62,7 @@ async def ask(
 
         client = AsyncClient()
         async for chunk in await client.chat(
-            model=model,
+            model=chat_model,
             messages=map_messages(conversation=conversation, context=context_text),
             stream=True,
             options={"temperature": 0.3},
@@ -162,10 +168,10 @@ def build_context(collection, top_results) -> str:
     return "\n\n---\n\n".join(blocks)
 
 
-async def enhance_query(question: str) -> list[str]:
+async def enhance_query(question: str, chat_model: str) -> list[str]:
     client = AsyncClient()
     response: ChatResponse = await client.chat(
-        model=model,
+        model=chat_model,
         messages=[
             {
                 "role": "system",

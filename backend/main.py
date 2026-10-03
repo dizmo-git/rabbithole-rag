@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from backend.db_seed import seed
-from backend.routers import notebooks, query, sources
+from backend.routers import notebooks, query, settings, sources
 
 origins = ["http://localhost", "http://localhost:5173"]
 doSeed = True
@@ -34,6 +34,7 @@ app.add_middleware(
 app.include_router(router=notebooks.router)
 app.include_router(router=query.router)
 app.include_router(router=sources.router)
+app.include_router(router=settings.router)
 
 if __name__ == "__main__":
     import uvicorn
