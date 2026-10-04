@@ -68,8 +68,8 @@ export function UploadSourceAlert({
           <div className="w-full text-center mt-2">
             <AlertDialogTitle>Upload New Source</AlertDialogTitle>
             <AlertDialogDescription>
-              Upload a file, or paste a link to a forum post or a public
-              Telegram channel
+              Upload a file, or paste a link to a web page, a forum post or a
+              public Telegram channel
             </AlertDialogDescription>
           </div>
         </AlertDialogHeader>

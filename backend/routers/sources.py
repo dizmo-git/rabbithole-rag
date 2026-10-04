@@ -1,11 +1,14 @@
 import os
 import shutil
 import tkinter as tk
+import traceback
 
 from ingestors import get_ingestor
 from tkinter import filedialog
 from fastapi import APIRouter, Depends, BackgroundTasks, HTTPException, Query
 from backend.database import get_session
+from backend.ingestors.base import IngestError
+from backend.ingestors.generic_url import is_web_url, with_scheme
 from backend.ingestors.telegram import (
     DEFAULT_STYLE,
     MAX_POSTS_LIMIT,
@@ -14,7 +17,7 @@ from backend.ingestors.telegram import (
     parse_url,
 )
 from backend.models import Notebook, Source, SourceType
-from backend.chroma import chunk_and_save, delete_embeddings, save_chunks
+from backend.chroma import chunk_and_save, delete_embeddings, mark_failed, save_chunks
 from pathlib import Path
 from sqlmodel import Session, select
 
@@ -76,13 +79,20 @@ async def upload_link(
     if notebook is None:
         raise HTTPException(status_code=404, detail="Notebook does not exist")
 
-    # Validate Telegram links up front: ingestion runs as a background task with no error
-    # path, so a bad link (invite, private t.me/c/...) would leave the source "pending".
+    # "example.com/post" -> "https://example.com/post": without a scheme urlparse puts
+    # the host in .path, so detect_source_type and the ingestors' URL parsing miss it
+    link = with_scheme(link)
+
+    # Validate links up front: ingestion runs as a background task with no error path,
+    # so a bad link (Telegram invite, private t.me/c/..., not a URL at all) would leave
+    # the source "pending" or "processed" with nothing in it.
     if is_telegram_url(link):
         try:
             parse_url(link)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
+    elif not is_web_url(link):
+        raise HTTPException(status_code=400, detail=f"Not a web link: {link}")
 
     source = Source(notebook_id=notebook.id, source_type=SourceType.POST, url=link)
     session.add(source)
@@ -102,9 +112,18 @@ async def ingest_link(
     max_posts: int | None = None,
     style: ChunkingStyle = DEFAULT_STYLE,
 ) -> None:
-    ingestor = get_ingestor(link, max_posts=max_posts, style=style)
-    chunks = await ingestor.ingest(link, source_id)
-    await save_chunks(chunks, collection, source_id)
+    # Runs as a BackgroundTask, where an exception would only be logged and the source
+    # would stay "pending" forever: record every failure on the source instead.
+    try:
+        ingestor = get_ingestor(link, max_posts=max_posts, style=style)
+        chunks = await ingestor.ingest(link, source_id)
+        await save_chunks(chunks, collection, source_id)
+    except IngestError as e:  # expected, the message is written for the user
+        print(f"Ingestion failed for {link}: {e}")
+        mark_failed(source_id, str(e))
+    except Exception as e:
+        traceback.print_exc()
+        mark_failed(source_id, f"Unexpected error: {e}")
 
 
 @router.delete("/del/")

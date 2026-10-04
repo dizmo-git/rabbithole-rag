@@ -5,7 +5,7 @@ import {
   SidebarMenuItem,
 } from "./ui/sidebar";
 import { Spinner } from "./ui/spinner";
-import { LuEllipsisVertical } from "react-icons/lu";
+import { LuCircleAlert, LuEllipsisVertical } from "react-icons/lu";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,16 +21,20 @@ interface SourceItemProps {
 
 export function SourceItem({ source, onRename, onDelete }: SourceItemProps) {
   const isPending = source.status === "pending";
+  const isFailed = source.status === "failed";
+  const name = source.filename ?? source.url ?? "Untitled source";
 
   return (
     <SidebarMenuItem className="relative rounded-md group/item hover:bg-accent hover:text-accent-foreground transition-colors">
       <SidebarMenuButton
-        title={source.filename ?? source.url ?? "Untitled source"}
+        // a failed source explains itself on hover, it stays in the list until deleted
+        title={isFailed ? `${name}\nFailed: ${source.error ?? "unknown error"}` : name}
         disabled={isPending}
         className="pr-8 hover:bg-transparent"
       >
-        <span className="truncate">
-          {source.filename ?? source.url ?? "Untitled source"}
+        {isFailed && <LuCircleAlert className="shrink-0 text-destructive" />}
+        <span className={isFailed ? "truncate text-muted-foreground" : "truncate"}>
+          {name}
         </span>
       </SidebarMenuButton>
 

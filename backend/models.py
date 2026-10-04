@@ -26,7 +26,8 @@ class Source(SQLModel, table=True):
     file_path: str | None = None
     url: str | None = None  # populated for POST sources instead of filename/file_path
     uploaded_at: datetime = Field(default_factory=datetime.utcnow)
-    status: str = Field(default="pending")
+    status: str = Field(default="pending")  # "pending" -> "processed" | "failed"
+    error: str | None = None  # why ingestion failed, shown to the user; set with "failed"
 
 
 class Message(BaseModel):
@@ -44,6 +45,7 @@ class Platform(str, Enum):
     REDDIT = "reddit"
     BLUESKY = "bluesky"
     TELEGRAM = "telegram"
+    WEB = "web"  # any other web page (GenericURLIngestor)
     LOCAL = "local"
 
 

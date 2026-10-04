@@ -98,6 +98,17 @@ async def save_chunks(chunks: list[Chunk], collection: str, source_id: str) -> N
         session.commit()
 
 
+def mark_failed(source_id: str, error: str) -> None:
+    with Session(database.engine) as session:
+        source = session.get(Source, source_id)
+        if source is None:  # deleted while it was still pending
+            return
+        source.status = "failed"
+        source.error = error
+        session.add(source)
+        session.commit()
+
+
 async def delete_embeddings(source_id: str, collection: str):
     vector_store = await get_vector_store(collection)
     vector_store.delete(where={"source_id": source_id})

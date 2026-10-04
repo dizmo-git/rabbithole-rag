@@ -23,7 +23,8 @@ export interface Source {
   file_path: string | null;
   url: string | null;
   uploaded_at: Date;
-  status: string;
+  status: "pending" | "processed" | "failed";
+  error: string | null; // why ingestion failed, set together with "failed"
 }
 
 export interface Citation {

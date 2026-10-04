@@ -20,6 +20,8 @@ dependencies = [
     "sqlmodel",
     "requests",
     "beautifulsoup4",
+    "trafilatura>=2.3",
+    "playwright>=1.63",  # JS pages only, drives the installed Edge/Chrome (no download)
 ]
 requires-python = ">=3.13"
 authors = [
