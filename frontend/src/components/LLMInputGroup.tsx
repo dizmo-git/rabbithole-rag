@@ -1,82 +1,89 @@
 import TextareaAutosize from "react-textarea-autosize";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { LuArrowUp, LuSquare } from "react-icons/lu";
 
 import {
   InputGroup,
   InputGroupAddon,
   InputGroupButton,
 } from "@/components/ui/input-group";
-import { ask } from "@/api/llm";
 import { useNotebook } from "./NotebookProvider";
-import { MessageRole, type Message } from "@/types";
 
 type LLMInputGroupProps = {
-  messages: Message[];
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+  isStreaming: boolean;
+  onSend: (text: string) => void;
+  onStop: () => void;
 };
 
-export function LLMInputGroup({ messages, setMessages }: LLMInputGroupProps) {
+export function LLMInputGroup({
+  isStreaming,
+  onSend,
+  onStop,
+}: LLMInputGroupProps) {
   const [text, setText] = useState("");
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { selectedNotebook } = useNotebook();
 
-  async function askAssistant(input: string) {
-    if (!input) {
-      alert("Input is empty");
-      return;
+  // Typing is allowed while an answer streams, sending is not
+  const canSend = !isStreaming && !!text.trim() && !!selectedNotebook;
+
+  function submit() {
+    if (!canSend) return;
+    onSend(text.trim());
+    setText("");
+    textareaRef.current?.focus();
+  }
+
+  function onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    // Enter sends, Shift+Enter is a newline. isComposing: Enter confirming an IME candidate
+    if (e.key === "Enter" && !e.shiftKey && !e.nativeEvent.isComposing) {
+      e.preventDefault();
+      submit();
     }
-
-    const newMessage: Message = { content: input, role: MessageRole.User };
-    const updatedMessages = [...messages, newMessage];
-
-    const assistantMessage: Message = {
-      content: "",
-      role: MessageRole.Assistant,
-    };
-    setMessages([...updatedMessages, assistantMessage]);
-
-    await ask(
-      updatedMessages,
-      selectedNotebook,
-      (delta) => {
-        setMessages((prev) => {
-          const next = [...prev];
-          const last = next[next.length - 1];
-          next[next.length - 1] = { ...last, content: last.content + delta };
-          return next;
-        });
-      },
-      (citations) => {
-        setMessages((prev) => {
-          const next = [...prev];
-          const last = next[next.length - 1];
-          next[next.length - 1] = { ...last, citations };
-          return next;
-        });
-      },
-    );
   }
 
   return (
     <div className="flex justify-center px-4 pb-4">
-      <div className="w-full max-w-2xl">
-        <InputGroup>
+      <div className="w-full max-w-3xl">
+        {/* Solid card that looks the same focused or not. The default InputGroup is
+            translucent gray in dark mode, grows a focus ring, and fades out entirely
+            (has-disabled) whenever the Send button is disabled, i.e. on empty input */}
+        <InputGroup className="rounded-2xl border-border bg-card shadow-sm dark:bg-card has-disabled:bg-card has-disabled:opacity-100 dark:has-disabled:bg-card has-[[data-slot=input-group-control]:focus-visible]:border-border has-[[data-slot=input-group-control]:focus-visible]:ring-0">
           <TextareaAutosize
+            ref={textareaRef}
+            autoFocus
             data-slot="input-group-control"
-            className="flex field-sizing-content min-h-16 w-full resize-none rounded-md bg-transparent px-3 py-2.5 text-base transition-[color,box-shadow] outline-none md:text-sm"
-            placeholder="Ask anything..."
+            className="flex field-sizing-content min-h-16 max-h-60 w-full resize-none rounded-md bg-transparent px-3 py-2.5 text-base transition-[color,box-shadow] outline-none md:text-sm"
+            placeholder={
+              selectedNotebook ? "Ask anything..." : "Select a notebook first"
+            }
+            value={text}
             onChange={(e) => setText(e.target.value)}
+            onKeyDown={onKeyDown}
           />
           <InputGroupAddon align="block-end">
-            <InputGroupButton
-              onClick={async () => {
-                await askAssistant(text);
-              }}
-              className="ml-auto"
-              size="sm"
-              variant="default"
-            >
-              Submit
-            </InputGroupButton>
+            {isStreaming ? (
+              <InputGroupButton
+                onClick={onStop}
+                aria-label="Stop"
+                className="ml-auto rounded-full"
+                size="icon-sm"
+                variant="default"
+              >
+                <LuSquare className="size-3 fill-current" />
+              </InputGroupButton>
+            ) : (
+              <InputGroupButton
+                onClick={submit}
+                disabled={!canSend}
+                aria-label="Send"
+                className="ml-auto rounded-full"
+                size="icon-sm"
+                variant="default"
+              >
+                <LuArrowUp />
+              </InputGroupButton>
+            )}
           </InputGroupAddon>
         </InputGroup>
       </div>

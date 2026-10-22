@@ -40,6 +40,9 @@ export interface Message {
   role: MessageRoleType;
   content: string;
   citations?: Citation[];
+  // UI-only, never sent to the backend (see api/llm.ts)
+  error?: string; // the request failed, shown instead of the answer
+  stopped?: boolean; // the user pressed Stop, content is partial
 }
 
 export type MessageRoleType = (typeof MessageRole)[keyof typeof MessageRole];
