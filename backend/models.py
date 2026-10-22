@@ -46,6 +46,7 @@ class Platform(str, Enum):
     BLUESKY = "bluesky"
     TELEGRAM = "telegram"
     WEB = "web"  # any other web page (GenericURLIngestor)
+    YOUTUBE = "youtube"  # video transcript (YouTubeIngestor)
     LOCAL = "local"
 
 

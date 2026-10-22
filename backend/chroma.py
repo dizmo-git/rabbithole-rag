@@ -85,7 +85,9 @@ async def save_to_chroma(
         print(f"Saved {len(doc_batch)} chunks to {CHROMA_PATH}.")
 
 
-async def save_chunks(chunks: list[Chunk], collection: str, source_id: str) -> None:
+async def save_chunks(
+    chunks: list[Chunk], collection: str, source_id: str, title: str | None = None
+) -> None:
     documents = chunks_to_documents(chunks)
     await save_to_chroma(documents, collection, ids=[c.id for c in chunks])
 
@@ -94,6 +96,10 @@ async def save_chunks(chunks: list[Chunk], collection: str, source_id: str) -> N
         if source is None:
             raise RuntimeError("Source not found")
         source.status = "processed"
+        # the ingestor's name for the source (video title), unless the user renamed it
+        # while it was pending; same commit, so the sidebar never shows a half state
+        if title and not source.filename:
+            source.filename = title
         session.add(source)
         session.commit()
 

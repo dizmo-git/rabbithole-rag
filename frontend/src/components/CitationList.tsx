@@ -83,7 +83,8 @@ function CitationLinks({ links }: { links: string[] }) {
         rel="noopener noreferrer"
         className={`${linkClass} mt-1`}
       >
-        Open original <LuExternalLink className="size-3" />
+        {videoTimeLabel(links[0]) ?? "Open original"}{" "}
+        <LuExternalLink className="size-3" />
       </a>
     );
   }
@@ -104,6 +105,25 @@ function CitationLinks({ links }: { links: string[] }) {
       ))}
     </div>
   );
+}
+
+// YouTube chunks link to watch?v=<id>&t=<seconds>s (backend/ingestors/youtube.py)
+function videoTimeLabel(link: string): string | null {
+  try {
+    const url = new URL(link);
+    const t = url.searchParams.get("t");
+    if (!url.hostname.endsWith("youtube.com") || !t) return null;
+    return `Watch at ${formatTimestamp(parseInt(t, 10))}`;
+  } catch {
+    return null;
+  }
+}
+
+function formatTimestamp(totalSeconds: number): string {
+  const h = Math.floor(totalSeconds / 3600);
+  const m = Math.floor((totalSeconds % 3600) / 60);
+  const s = String(totalSeconds % 60).padStart(2, "0");
+  return h ? `${h}:${String(m).padStart(2, "0")}:${s}` : `${m}:${s}`;
 }
 
 function postLabel(link: string): string {

@@ -16,6 +16,7 @@ from backend.ingestors.telegram import (
     is_telegram_url,
     parse_url,
 )
+from backend.ingestors.youtube import is_youtube_url, parse_video_id
 from backend.models import Notebook, Source, SourceType
 from backend.chroma import chunk_and_save, delete_embeddings, mark_failed, save_chunks
 from pathlib import Path
@@ -91,6 +92,11 @@ async def upload_link(
             parse_url(link)
         except ValueError as e:
             raise HTTPException(status_code=400, detail=str(e))
+    elif is_youtube_url(link):
+        try:
+            parse_video_id(link)  # playlists, channels -> 400
+        except ValueError as e:
+            raise HTTPException(status_code=400, detail=str(e))
     elif not is_web_url(link):
         raise HTTPException(status_code=400, detail=f"Not a web link: {link}")
 
@@ -117,7 +123,7 @@ async def ingest_link(
     try:
         ingestor = get_ingestor(link, max_posts=max_posts, style=style)
         chunks = await ingestor.ingest(link, source_id)
-        await save_chunks(chunks, collection, source_id)
+        await save_chunks(chunks, collection, source_id, title=ingestor.title)
     except IngestError as e:  # expected, the message is written for the user
         print(f"Ingestion failed for {link}: {e}")
         mark_failed(source_id, str(e))

@@ -11,12 +11,14 @@ from backend.ingestors.telegram import (
     TelegramIngestor,
     is_telegram_url,
 )
+from backend.ingestors.youtube import YouTubeIngestor, is_youtube_url
 
 INGESTOR_REGISTRY: dict[str, type[BaseIngestor]] = {
     "hn": HNIngestor,
     "reddit": RedditIngestor,
     "bluesky": BlueskyIngestor,
     "telegram": TelegramIngestor,
+    "youtube": YouTubeIngestor,
     "generic_url": GenericURLIngestor,
 }
 
@@ -42,6 +44,8 @@ def detect_source_type(url: str) -> str:
     # tolerates links pasted without a scheme
     if is_telegram_url(url):
         return "telegram"
+    if is_youtube_url(url):
+        return "youtube"
 
     host = urlparse(url).netloc.lower()
 

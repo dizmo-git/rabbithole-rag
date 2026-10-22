@@ -10,5 +10,10 @@ class IngestError(Exception):
 
 
 class BaseIngestor(ABC):
+    # A human-readable name for the source (video title, ...) an ingestor may set during
+    # ingest(); routers/sources.ingest_link stores it as Source.filename unless the user
+    # already renamed the source. None keeps showing the URL.
+    title: str | None = None
+
     @abstractmethod
     async def ingest(self, url: str, source_id: str) -> list[Chunk]: ...
